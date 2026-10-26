@@ -125,7 +125,17 @@ Native app · storing audio · Android share target · Action button or Shortcut
 Passkeys · "on this day" resurfacing · gentle nightly reminder · pinning notes to carry them forward · AI routing of spoken notes · full offline reading.
 
 ## To verify before M1
-- [ ] Supabase free-tier pausing policy (third-party sources say 7 days without activity), checked against Supabase's own docs.
-- [ ] The Supabase **Data API change for existing free projects from 30 October 2026**: what changes, and whether it affects `supabase-js` table access.
+- [ ] Supabase free-tier pausing policy (third-party sources say 7 days without activity), checked against Supabase's own docs. The keep-alive workflow covers it either way.
+- [x] The Supabase **Data API change from 30 October 2026**: new tables in `public` need explicit `GRANT`s before supabase-js can reach them. The migration grants `authenticated` only. ([changelog](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically))
 - [ ] Netlify's current free-tier credit limits.
-- [ ] Collect 5–10 real raw dictations to use as filler-removal test fixtures.
+- [x] Real dictations collected. Anonymised versions are the fixtures in `app/src/lib/filler.test.ts`.
+
+## Build notes (M1)
+Decisions made while building, on top of the ones above:
+- **Hash routing** (`#/day/2026-10-25`) and a relative base path: the build works on any static host with no rewrite rules.
+- **Demo mode:** with no Supabase settings the app runs without sign-in, keeping the encrypted journal in browser storage. Useful for trying it out and for development.
+- **Key design:** a random master key encrypts everything. The vault stores it twice, wrapped by the passphrase (PBKDF2-SHA256, 600k iterations) and by the recovery key. Each ciphertext is bound to its table and row id. The vault is only saved after the recovery key has been shown.
+- **Versioned rows:** each passage and note has a `version`, and saves only apply if the version matches. On a mismatch the incoming save wins and the other version becomes a "Conflict copy" note.
+- **Settings are cached on the device** (encrypted) so writing works offline.
+- **The new-passage button uses a pen icon**, not a mic, because without the AI add-on it opens the keyboard. It becomes a mic in M3.
+- **The composer is always in the page**, so it can take focus inside the button tap. iOS only opens the keyboard when focus happens in a user gesture.

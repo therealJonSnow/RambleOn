@@ -1,0 +1,103 @@
+@import 'tailwindcss';
+@import '@fontsource/courier-prime/400.css';
+@import '@fontsource/courier-prime/400-italic.css';
+@import '@fontsource/courier-prime/700.css';
+@import '@fontsource/special-elite/400.css';
+
+/* Typewriter theme. Fonts are bundled (no Google Fonts requests) so the app
+   works offline and doesn't tell anyone when you open your journal. */
+@theme {
+  --font-type: 'Courier Prime', ui-monospace, 'Courier New', monospace;
+  --font-display: 'Special Elite', 'Courier Prime', ui-monospace, monospace;
+
+  --color-desk: #ddd3c1;
+  --color-paper: #f7f2e7;
+  --color-paper-edge: #e8dfcc;
+  --color-ink: #26221d;
+  --color-ink-soft: #6e665a;
+  --color-pencil: #857d70;
+  --color-ribbon: #b3261e;
+  --color-ribbon-ink: #fdf8ee;
+}
+
+/* Night paper: easier on the eyes in bed. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-desk: #121110;
+    --color-paper: #1e1b17;
+    --color-paper-edge: #2c2822;
+    --color-ink: #e9e2d3;
+    --color-ink-soft: #a49b8c;
+    --color-pencil: #958d80;
+    --color-ribbon: #e0574c;
+    --color-ribbon-ink: #1e1b17;
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-desk text-ink font-type antialiased;
+    min-height: 100dvh;
+  }
+  /* 16px minimum stops iOS zooming into inputs. */
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    font-size: max(1rem, 1em);
+    color: inherit;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--color-ribbon) 25%, transparent);
+  }
+}
+
+@layer components {
+  .sheet {
+    @apply bg-paper;
+    background-image: radial-gradient(
+      ellipse at top,
+      transparent 55%,
+      color-mix(in srgb, var(--color-paper-edge) 70%, transparent)
+    );
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.08),
+      0 8px 24px -8px rgb(0 0 0 / 0.18);
+  }
+  /* Text areas that look like the typed page itself. */
+  .typed-field {
+    @apply w-full resize-none bg-transparent leading-8 outline-none placeholder:text-pencil;
+    overflow: hidden;
+  }
+  .typed-field:focus {
+    background: color-mix(in srgb, var(--color-paper-edge) 35%, transparent);
+  }
+  .link {
+    @apply underline decoration-dotted underline-offset-4 hover:text-ribbon;
+  }
+  .label {
+    @apply font-display text-sm tracking-widest text-ink-soft uppercase;
+  }
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-sm border border-ink px-4 py-2 font-display tracking-wide transition active:translate-y-px disabled:opacity-50;
+}
+
+@utility btn-primary {
+  @apply btn border-ribbon bg-ribbon text-ribbon-ink;
+}
+
+@media print {
+  body {
+    background: white;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
