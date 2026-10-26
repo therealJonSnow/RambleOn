@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Layout, Sheet } from '../components/Layout'
+import { DeskHeading, Layout } from '../components/Layout'
 import { demoMode } from '../lib/backend'
 import { formatLongDate } from '../lib/dates'
 import { buildExportZip, exportFileName, readExport } from '../lib/export'
@@ -12,9 +12,10 @@ import { useVault } from '../state/vault'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mb-10">
-      <h2 className="label mb-3">{title}</h2>
-      {children}
+    <section className="mb-6">
+      <h2 className="label mb-2 px-1">{title}</h2>
+      {/* Plain panels: settings aren't a journal page. */}
+      <div className="rounded-lg border border-ink/10 bg-paper/70 px-4 py-4">{children}</div>
     </section>
   )
 }
@@ -92,11 +93,10 @@ export function SettingsPage() {
 
   return (
     <Layout>
-      <Sheet>
-        <h1 className="mb-8 font-display text-4xl">Settings</h1>
+      <DeskHeading>Settings</DeskHeading>
 
         {message && (
-          <p role="status" className="mb-8 rounded-sm border border-ink/30 px-4 py-3">
+          <p role="status" className="mb-6 rounded-lg border border-ribbon/40 bg-paper/70 px-4 py-3">
             {message}
           </p>
         )}
@@ -116,13 +116,13 @@ export function SettingsPage() {
               ))}
             </select>
           </label>
-          <p className="mt-2 text-sm text-ink-soft">
+          <p className="mt-2 text-ink-soft">
             Anything written before this time goes on the previous day’s page, and that’s when past days lock.
           </p>
         </Section>
 
         <Section title="Filler words">
-          <p className="mb-4 text-sm text-ink-soft">
+          <p className="mb-4 text-ink-soft">
             Removed from dictation when you save a passage. Your original words are always kept. Phrases like “you
             know” can carry meaning, so they’re off by default.
           </p>
@@ -161,19 +161,19 @@ export function SettingsPage() {
             <input
               aria-label="New filler word"
               placeholder="Add a word or phrase"
-              className="min-w-0 flex-1 rounded-sm border border-ink/30 bg-paper px-3 py-1"
+              className="w-full rounded-sm border border-ink/30 bg-paper px-3 py-1"
               value={newFiller}
               onChange={(e) => setNewFiller(e.target.value)}
             />
             <button className="btn">Add</button>
-            <button type="button" className="link text-sm" onClick={() => update({ ...settings, fillers: DEFAULT_FILLERS })}>
+            <button type="button" className="link" onClick={() => update({ ...settings, fillers: DEFAULT_FILLERS })}>
               Reset to defaults
             </button>
           </form>
         </Section>
 
         <Section title="Unlock a past day">
-          <p className="mb-3 text-sm text-ink-soft">
+          <p className="mb-3 text-ink-soft">
             Past days lock at rollover, like a page out of the typewriter. Unlock one if you really need to change or
             delete something.
           </p>
@@ -202,7 +202,7 @@ export function SettingsPage() {
                 <li key={d} className="flex items-center gap-3">
                   {formatLongDate(d)}
                   <button
-                    className="link text-sm"
+                    className="link"
                     onClick={() => update({ ...settings, unlockedDates: settings.unlockedDates.filter((x) => x !== d) })}
                   >
                     Lock again
@@ -214,7 +214,7 @@ export function SettingsPage() {
         </Section>
 
         <Section title="Export and restore">
-          <p className="mb-4 text-sm text-ink-soft">
+          <p className="mb-4 text-ink-soft">
             Downloads everything as a zip: a Markdown page per day, your photos, and <code>journal.json</code> for restoring.{' '}
             <strong>The export is not encrypted</strong>, so keep it somewhere safe.
           </p>
@@ -250,7 +250,6 @@ export function SettingsPage() {
             )}
           </div>
         </Section>
-      </Sheet>
     </Layout>
   )
 }

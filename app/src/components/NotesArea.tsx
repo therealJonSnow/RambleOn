@@ -34,8 +34,11 @@ export function NotesArea({ date, notes, onSave, onDelete, onAdded }: Props) {
   const listed = notes.filter((n) => n.id !== draft.id)
 
   return (
-    <section className="mt-14 border-t border-dashed border-ink/30 pt-6" aria-label="Notes">
-      <h2 className="label mb-4">Notes</h2>
+    <section className="mt-6" aria-label="Notes">
+      <p aria-hidden className="typed-rule mb-4">
+        {'- '.repeat(60)}
+      </p>
+      <h2 className="typed-heading mb-4 inline-block">Notes</h2>
       <ul>
         {listed.map((n) => (
           <NoteItem key={n.id} note={n} onSave={onSave} onDelete={onDelete} />
@@ -60,9 +63,9 @@ function NoteItem({ note, onSave, onDelete }: { note: Note; onSave(n: Note): voi
   const [edited, setEdited] = useState(false)
   const save = useDebounced((t: string) => onSave({ ...note, text: t }), 800)
   return (
-    <li className="mb-3 flex gap-3">
-      <span aria-hidden className="pt-0.5 leading-8 text-pencil">
-        –
+    <li className="mb-2 flex gap-3">
+      <span aria-hidden className="pt-0.5 text-pencil">
+        -
       </span>
       <LinkedTextarea
         aria-label="Note"
@@ -103,7 +106,7 @@ function NewNote({
 
   return (
     <div className="flex gap-3">
-      <span aria-hidden className="pt-0.5 leading-8 text-pencil">
+      <span aria-hidden className="pt-0.5 text-pencil">
         +
       </span>
       <AutoTextarea

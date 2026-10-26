@@ -25,7 +25,7 @@ export function LinkedTextarea({ value, onFocus, onBlur, className = '', ...prop
         }}
       />
       {overlay && (
-        <div aria-hidden className="pointer-events-none absolute inset-0 leading-8 break-words whitespace-pre-wrap">
+        <div aria-hidden className="pointer-events-none absolute inset-0 break-words whitespace-pre-wrap">
           {linkify(value).map((s, i) =>
             s.href ? (
               <a

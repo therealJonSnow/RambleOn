@@ -16,7 +16,7 @@ export function SyncIndicator() {
   return (
     <p
       role="status"
-      className="no-print pointer-events-none fixed top-[max(0.5rem,env(safe-area-inset-top))] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-ink/85 px-3 py-1 text-xs whitespace-nowrap text-paper shadow-md"
+      className="no-print pointer-events-none fixed top-[max(0.5rem,env(safe-area-inset-top))] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-ink/85 px-3 py-1 whitespace-nowrap text-paper shadow-md"
     >
       <span className="size-1.5 rounded-full bg-ribbon" aria-hidden />
       {label}

@@ -1,38 +1,43 @@
 @import 'tailwindcss';
-@import '@fontsource/courier-prime/400.css';
-@import '@fontsource/courier-prime/400-italic.css';
-@import '@fontsource/courier-prime/700.css';
 @import '@fontsource/special-elite/400.css';
 
-/* Typewriter theme. Fonts are bundled (no Google Fonts requests) so the app
-   works offline and doesn't tell anyone when you open your journal. */
+/* Typewriter theme: one typeface, one size, like a real typewriter.
+   Hierarchy comes only from what a typewriter can do: CAPITALS, typed
+   underlines, the red half of the ribbon, spacing and typed rules.
+   The font is bundled (no Google Fonts requests) so the app works offline
+   and doesn't tell anyone when you open your journal. */
 @theme {
-  --font-type: 'Courier Prime', ui-monospace, 'Courier New', monospace;
-  --font-display: 'Special Elite', 'Courier Prime', ui-monospace, monospace;
+  --font-type: 'Special Elite', ui-monospace, 'Courier New', monospace;
 
-  --color-desk: #ddd3c1;
-  --color-paper: #f7f2e7;
-  --color-paper-edge: #e8dfcc;
-  --color-ink: #26221d;
-  --color-ink-soft: #6e665a;
-  --color-pencil: #857d70;
-  --color-ribbon: #b3261e;
-  --color-ribbon-ink: #fdf8ee;
-  --color-print: #ffffff;
+  --color-desk: #cfc4b0;
+  --color-paper: #f6f0e2;
+  --color-paper-edge: #e6dcc6;
+  --color-ink: #24201b;
+  --color-ink-soft: #6f675b;
+  --color-pencil: #8b8476;
+  --color-ribbon: #a8231b;
+  --color-ribbon-ink: #fbf6ea;
+  --color-print: #fbf8f1;
 }
 
-/* Night paper: easier on the eyes in bed. */
+:root {
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.4  0 0 0 0 0.33  0 0 0 0 0.22  0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url%28%23n%29'/%3E%3C/svg%3E");
+  --paper-fibres: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008 0.12' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.38  0 0 0 0 0.25  0 0 0 0.1 -0.02'/%3E%3C/filter%3E%3Crect width='600' height='600' filter='url%28%23f%29'/%3E%3C/svg%3E");
+}
+
+/* Night paper: the same sheet, dark, for writing in bed. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-desk: #121110;
+    --color-desk: #0f0e0d;
     --color-paper: #1e1b17;
-    --color-paper-edge: #2c2822;
-    --color-ink: #e9e2d3;
-    --color-ink-soft: #a49b8c;
-    --color-pencil: #958d80;
-    --color-ribbon: #e0574c;
+    --color-paper-edge: #2b2620;
+    --color-ink: #e8e0cf;
+    --color-ink-soft: #a39a8a;
+    --color-pencil: #857d70;
+    --color-ribbon: #e0675b;
     --color-ribbon-ink: #1e1b17;
-    --color-print: #cfc8ba;
+    --color-print: #cfc7b8;
+    --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.4  0 0 0 0 0.33  0 0 0 0 0.22  0 0 0 0.22 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url%28%23n%29'/%3E%3C/svg%3E");
   }
 }
 
@@ -41,18 +46,27 @@
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
+  /* The one size. Everything inherits it. */
   body {
     @apply bg-desk text-ink font-type antialiased;
+    font-size: 17px;
+    line-height: 30px;
     min-height: 100dvh;
   }
-  /* 16px minimum stops iOS zooming into inputs. */
+  /* Inherit the one size (17px also stops iOS zooming into inputs). */
   input,
   textarea,
   select,
   button {
     font: inherit;
-    font-size: max(1rem, 1em);
     color: inherit;
+  }
+  /* A typewriter can't do bold: it underlines. */
+  b,
+  strong {
+    font-weight: inherit;
+    text-decoration: underline;
+    text-underline-offset: 4px;
   }
   ::selection {
     background: color-mix(in srgb, var(--color-ribbon) 25%, transparent);
@@ -60,20 +74,65 @@
 }
 
 @layer components {
+  /* Typing paper. Day pages add .binder (holes and a margin rule); lists
+     use small slips of the same paper. */
   .sheet {
-    @apply bg-paper;
-    background-image: radial-gradient(
-      ellipse at top,
-      transparent 55%,
-      color-mix(in srgb, var(--color-paper-edge) 70%, transparent)
-    );
+    position: relative;
+    background-color: var(--color-paper);
+    background-image:
+      var(--paper-grain), var(--paper-fibres),
+      radial-gradient(ellipse at 50% 30%, transparent 55%, var(--color-paper-edge) 120%);
     box-shadow:
-      0 1px 2px rgb(0 0 0 / 0.08),
-      0 8px 24px -8px rgb(0 0 0 / 0.18);
+      0 1px 1px rgb(0 0 0 / 0.08),
+      0 10px 30px -10px rgb(0 0 0 / 0.35);
+  }
+  .binder::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 2.75rem;
+    border-left: 1.5px solid var(--color-ribbon);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .punch-hole {
+    position: absolute;
+    left: 0.75rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    background: var(--color-desk);
+    box-shadow: inset 1px 2px 3px rgb(0 0 0 / 0.35);
+    pointer-events: none;
+  }
+  .slip {
+    rotate: -0.25deg;
+  }
+  .slip:nth-child(even) {
+    rotate: 0.3deg;
+  }
+  .slip:nth-child(3n) {
+    rotate: -0.1deg;
+  }
+  /* Typed in capitals and underlined: the only "heading" a typewriter has. */
+  .typed-heading {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 6px;
+  }
+  .typed-rule {
+    color: var(--color-pencil);
+    letter-spacing: 0.1em;
+    overflow: hidden;
+    white-space: nowrap;
+    user-select: none;
   }
   /* Text areas that look like the typed page itself. */
   .typed-field {
-    @apply w-full resize-none bg-transparent leading-8 outline-none placeholder:text-pencil;
+    @apply w-full resize-none bg-transparent outline-none placeholder:text-pencil;
     overflow: hidden;
   }
   .typed-field:focus {
@@ -81,7 +140,7 @@
   }
   /* A print taped onto the page, slightly askew. */
   .taped-photo {
-    rotate: -0.6deg;
+    rotate: -0.8deg;
   }
   figure:nth-of-type(even) .taped-photo {
     rotate: 0.7deg;
@@ -95,20 +154,22 @@
     height: 1.4rem;
     translate: -50% 0;
     rotate: -2deg;
-    background: color-mix(in srgb, var(--color-paper-edge) 75%, transparent);
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+    background: var(--color-paper-edge);
+    opacity: 0.85;
     z-index: 1;
   }
   .link {
     @apply underline decoration-dotted underline-offset-4 hover:text-ribbon;
   }
   .label {
-    @apply font-display text-sm tracking-widest text-ink-soft uppercase;
+    @apply text-ink-soft uppercase;
+    letter-spacing: 0.08em;
   }
 }
 
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-sm border border-ink px-4 py-2 font-display tracking-wide transition active:translate-y-px disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-sm border border-ink px-4 py-1 uppercase transition active:translate-y-px disabled:opacity-50;
+  letter-spacing: 0.06em;
 }
 
 @utility btn-primary {

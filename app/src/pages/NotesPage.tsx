@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { Layout, Sheet } from '../components/Layout'
+import { DeskHeading, Layout, Slip } from '../components/Layout'
 import { LinkedText } from '../components/LinkedText'
 import { formatLongDate, formatWeekday } from '../lib/dates'
 import type { Note } from '../lib/models'
@@ -24,31 +24,29 @@ export function NotesPage() {
 
   return (
     <Layout>
-      <Sheet>
-        <h1 className="mb-6 font-display text-4xl">All notes</h1>
-        <input
-          type="search"
-          aria-label="Search notes"
-          placeholder="Search notes…"
-          className="mb-8 w-full rounded-sm border border-ink/30 bg-paper px-3 py-2 outline-none focus:border-ink"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        {!notes && <p className="animate-pulse text-ink-soft">Loading…</p>}
-        {notes && shown.length === 0 && <p className="text-pencil">{query ? 'No notes match.' : 'No notes yet.'}</p>}
-        <ul>
-          {shown.map((n) => (
-            <li key={n.id} className="mb-6">
-              <Link to={n.journalDate === today ? '/' : `/day/${n.journalDate}`} className="label hover:text-ribbon">
-                {formatWeekday(n.journalDate)} {formatLongDate(n.journalDate)}
-              </Link>
-              <p className="leading-8 break-words whitespace-pre-wrap">
-                <LinkedText text={n.text} />
-              </p>
-            </li>
-          ))}
-        </ul>
-      </Sheet>
+      <DeskHeading>All notes</DeskHeading>
+      <input
+        type="search"
+        aria-label="Search notes"
+        placeholder="Search notes…"
+        className="mb-6 w-full rounded-sm border border-ink/30 bg-paper px-3 py-2 outline-none focus:border-ink"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      {!notes && <p className="animate-pulse px-1 text-ink-soft">Loading…</p>}
+      {notes && shown.length === 0 && <p className="px-1 text-ink-soft">{query ? 'No notes match.' : 'No notes yet.'}</p>}
+      <ul>
+        {shown.map((n) => (
+          <Slip key={n.id}>
+            <Link to={n.journalDate === today ? '/' : `/day/${n.journalDate}`} className="block text-pencil uppercase tracking-[0.05em] hover:text-ribbon">
+              {formatWeekday(n.journalDate)} {formatLongDate(n.journalDate)}
+            </Link>
+            <p className="break-words whitespace-pre-wrap">
+              <LinkedText text={n.text} />
+            </p>
+          </Slip>
+        ))}
+      </ul>
     </Layout>
   )
 }

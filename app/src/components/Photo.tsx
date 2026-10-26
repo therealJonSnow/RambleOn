@@ -34,7 +34,7 @@ export function Photo({ image, onOpen }: { image: ImageBlock; onOpen(): void }) 
       {url ? (
         <img src={url} alt={image.caption} className="size-full object-cover" draggable={false} />
       ) : (
-        <span className="grid size-full place-items-center bg-paper-edge text-sm text-ink-soft">
+        <span className="grid size-full place-items-center bg-paper-edge text-ink-soft">
           {url === null ? 'Photo unavailable' : 'Loading photo…'}
         </span>
       )}
@@ -64,8 +64,8 @@ export function PhotoViewer({ image, onClose }: { image: ImageBlock; onClose(): 
       ) : (
         <p className="text-white/70">{url === null ? 'Photo unavailable' : 'Loading…'}</p>
       )}
-      {image.caption && <p className="mt-3 text-center font-type text-[#ff8a80]">{image.caption}</p>}
-      <button className="absolute top-[max(1rem,env(safe-area-inset-top))] right-4 px-3 py-1 text-2xl text-white" aria-label="Close">
+      {image.caption && <p className="mt-3 text-center text-[#ff8a80]">{image.caption}</p>}
+      <button className="absolute top-[max(1rem,env(safe-area-inset-top))] right-4 px-3 py-1 text-white" aria-label="Close">
         ×
       </button>
     </div>

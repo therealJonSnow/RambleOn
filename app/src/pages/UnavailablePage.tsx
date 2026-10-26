@@ -4,7 +4,7 @@ export function UnavailablePage({ message, onRetry }: { message: string; onRetry
   return (
     <Screen title="Can’t reach your database">
       <PausedHint />
-      <p className="mb-6 text-sm text-ink-soft">Details: {message}</p>
+      <p className="mb-6 text-ink-soft">Details: {message}</p>
       <button className="btn-primary w-full" onClick={onRetry}>
         Try again
       </button>

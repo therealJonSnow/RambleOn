@@ -51,10 +51,10 @@ export function SetupPage({ create, save }: Props) {
         </p>
         <div className="mb-6 rounded-sm border-2 border-dashed border-ink p-4">
           <p className="label mb-2">RambleOn recovery key</p>
-          <p className="font-type text-lg leading-8 font-bold tracking-wider break-words select-all">
+          <p className="font-bold break-words select-all">
             {created.recoveryKey}
           </p>
-          <p className="mt-2 text-sm text-ink-soft">Created {createdOn}</p>
+          <p className="mt-2 text-ink-soft">Created {createdOn}</p>
         </div>
         <div className="no-print">
           <button className="btn mb-6 w-full" onClick={() => window.print()}>

@@ -40,7 +40,7 @@ export function SignInPage() {
           Your account is created. Supabase has sent a confirmation link to <strong>{email.trim()}</strong>. Open it,
           then come back here and sign in.
         </p>
-        <p className="mb-6 text-sm text-ink-soft">
+        <p className="mb-6 text-ink-soft">
           Self-hosting? You can skip this step: turn off <em>Confirm email</em> under Authentication → Sign In /
           Providers → Email in Supabase.
         </p>
@@ -57,7 +57,7 @@ export function SignInPage() {
     <Screen title={signup ? 'Create your account' : 'Sign in'}>
       <form onSubmit={submit}>
         {signup && (
-          <p className="mb-6 text-sm text-ink-soft">
+          <p className="mb-6 text-ink-soft">
             This is your sign-in. Next you’ll choose a separate passphrase that encrypts your journal.
           </p>
         )}

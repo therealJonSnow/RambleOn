@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { AutoTextarea } from '../components/AutoTextarea'
 import { Layout, Sheet } from '../components/Layout'
@@ -138,30 +138,29 @@ export function DayPage() {
   return (
     <Layout>
       <Sheet>
-        <header className="mb-10 flex items-start justify-between gap-2">
-          <Link to={`/day/${addDays(date, -1)}`} className="no-print px-2 py-1 text-2xl text-ink-soft hover:text-ribbon" aria-label="Previous day">
-            ‹
-          </Link>
-          <div className="text-center">
-            <h1 className="font-display text-4xl leading-tight">{formatWeekday(date)}</h1>
-            <p className="text-ink-soft">{formatLongDate(date)}</p>
-          </div>
-          {date < today ? (
-            <Link to={addDays(date, 1) === today ? '/' : `/day/${addDays(date, 1)}`} className="no-print px-2 py-1 text-2xl text-ink-soft hover:text-ribbon" aria-label="Next day">
-              ›
+        <header className="mb-8">
+          <nav className="no-print flex justify-between text-ink-soft" aria-label="Other days">
+            <Link to={`/day/${addDays(date, -1)}`} className="-ml-2 px-2 hover:text-ribbon" aria-label="Previous day">
+              &lt;
             </Link>
-          ) : (
-            <span className="px-2 py-1 text-2xl opacity-0" aria-hidden>
-              ›
+            {date < today && (
+              <Link to={addDays(date, 1) === today ? '/' : `/day/${addDays(date, 1)}`} className="-mr-2 px-2 hover:text-ribbon" aria-label="Next day">
+                &gt;
+              </Link>
+            )}
+          </nav>
+          <h1 className="text-center">
+            <span className="typed-heading">
+              {formatWeekday(date)} {formatLongDate(date)}
             </span>
-          )}
+          </h1>
         </header>
 
         {!editable && (
-          <p className="no-print mb-8 text-center text-sm text-pencil">This page is locked. Add a margin note to correct anything.</p>
+          <p className="no-print mb-8 text-center text-pencil">This page is locked. Add a margin note to correct anything.</p>
         )}
         {editable && date < today && (
-          <p className="no-print mb-8 text-center text-sm text-pencil">
+          <p className="no-print mb-8 text-center text-pencil">
             Unlocked for editing ·{' '}
             <button className="link" onClick={relock}>
               Lock again
@@ -169,15 +168,18 @@ export function DayPage() {
           </p>
         )}
         {day && !day.complete && (
-          <p className="no-print mb-8 text-center text-sm text-ribbon">Couldn’t load everything. Showing what’s saved on this device.</p>
+          <p className="no-print mb-8 text-center text-ribbon">Couldn’t load everything. Showing what’s saved on this device.</p>
         )}
 
         {!day ? (
           <p className="animate-pulse text-ink-soft">Loading…</p>
         ) : (
           <>
-            {day.passages.map((p) => (
-              <PassageView key={p.id} passage={p} editable={editable} today={today} onSave={savePassage} onMove={movePassage} onDelete={deletePassage} />
+            {day.passages.map((p, i) => (
+              <Fragment key={p.id}>
+                {i > 0 && <PassageBreak />}
+                <PassageView passage={p} editable={editable} today={today} onSave={savePassage} onMove={movePassage} onDelete={deletePassage} />
+              </Fragment>
             ))}
             {empty && (
               <p className="mb-10 text-pencil">
@@ -189,16 +191,17 @@ export function DayPage() {
 
         {/* The next line of the page: tap it to start writing. */}
         {editable && day && (
-          <section className="mb-10" aria-label="New passage">
+          <section className="mb-4" aria-label="New passage">
+            {draft && day.passages.length > 0 && <PassageBreak />}
             {draft && (
-              <header className="mb-1 flex items-baseline gap-3">
-                <time className="font-display text-lg text-ribbon">{formatTime(draft.writtenAt)}</time>
-                <span className="text-sm text-pencil">Tap the mic on your keyboard to dictate</span>
+              <header className="flex items-baseline gap-3 text-pencil">
+                <time>{formatTime(draft.writtenAt)}</time>
+                <span>Dictate with the keyboard mic</span>
               </header>
             )}
             <div className="flex gap-3">
               {!draft && (
-                <span aria-hidden className="pt-0.5 leading-8 text-pencil">
+                <span aria-hidden className="pt-0.5 text-pencil">
                   +
                 </span>
               )}
@@ -253,11 +256,11 @@ function MarginNotes({
 }) {
   const [text, setText] = useState('')
   return (
-    <aside className="mt-6 border-l-2 border-pencil/40 pl-4 text-pencil" aria-label="Margin notes">
+    <aside className="mt-2 mb-6 border-l border-pencil/60 pl-3 text-pencil" aria-label="Margin notes">
       {margins.map((m) => (
-        <div key={m.id} className="group mb-4">
-          <p className="text-xs tracking-wider uppercase">
-            Margin note · {formatShortDate(m.writtenAt)} {formatTime(m.writtenAt)}
+        <div key={m.id} className="group mb-3">
+          <p className="uppercase">
+            Added {formatShortDate(m.writtenAt)}
             <button
               className="no-print ml-3 normal-case opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-ribbon"
               onClick={() => confirm('Delete this margin note?') && onDelete(m)}
@@ -265,12 +268,12 @@ function MarginNotes({
               delete
             </button>
           </p>
-          <p className="italic leading-7 whitespace-pre-wrap">{m.text}</p>
+          <p className="whitespace-pre-wrap">{m.text}</p>
         </div>
       ))}
       {canAdd && (
         <div className="no-print">
-          <AutoTextarea aria-label="New margin note" placeholder="Add a margin note…" className="italic" value={text} onChange={(e) => setText(e.target.value)} />
+          <AutoTextarea aria-label="New margin note" placeholder="Add a margin note…" value={text} onChange={(e) => setText(e.target.value)} />
           {text.trim() && (
             <div className="mt-2 flex justify-end">
               <button
@@ -287,5 +290,14 @@ function MarginNotes({
         </div>
       )}
     </aside>
+  )
+}
+
+// Between passages, as in a typed manuscript. Times are kept, not printed.
+function PassageBreak() {
+  return (
+    <p aria-hidden className="mb-6 text-center tracking-[0.6em] text-pencil">
+      * * *
+    </p>
   )
 }

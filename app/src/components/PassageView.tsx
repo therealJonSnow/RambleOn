@@ -38,6 +38,7 @@ export function PassageView({ passage, editable, today, onSave, onMove, onDelete
   const [viewing, setViewing] = useState<ImageBlock | null>(null)
   // Where the cursor last was, so photos go after that paragraph.
   const caret = useRef<Caret | null>(null)
+  const titleRef = useRef<HTMLInputElement>(null)
   const save = useDebounced((next: Passage) => onSave(next), 800)
 
   const build = (t: string, b: Block[]) => withBlocks({ ...passage, title: t }, b)
@@ -92,40 +93,51 @@ export function PassageView({ passage, editable, today, onSave, onMove, onDelete
   const text = textOf(blocks)
 
   return (
-    <section className="group mb-10" aria-label={`Passage at ${time}`}>
-      <header className="mb-1 flex items-baseline gap-3">
-        <time dateTime={passage.writtenAt} className="shrink-0 font-display text-lg text-ribbon">
-          {time}
-        </time>
-        {editable ? (
-          <input
-            aria-label="Title"
-            className="min-w-0 flex-1 bg-transparent font-display text-lg outline-none placeholder:text-pencil/60"
-            placeholder="Add a title"
-            value={title}
-            onChange={(e) => {
-              setTitle(e.target.value)
-              save(build(e.target.value, blocks))
-            }}
-            onBlur={() => save.flush()}
-          />
-        ) : (
-          title && <h2 className="min-w-0 flex-1 font-display text-lg">{title}</h2>
-        )}
-        {editable && (
-          <button
-            className="no-print ml-auto shrink-0 px-2 text-ink-soft hover:text-ribbon"
-            aria-label="Passage options"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((o) => !o)}
-          >
-            ⋯
-          </button>
-        )}
-      </header>
+    <section className={`relative mb-6 ${editable ? 'pr-8' : ''}`} aria-label={`Passage at ${time}`}>
+      {/* Titles are typed in capitals. Times are kept, but not printed on the page. */}
+      {editable ? (
+        <input
+          ref={titleRef}
+          aria-label="Title"
+          className={`w-full bg-transparent uppercase tracking-[0.05em] outline-none placeholder:normal-case placeholder:tracking-normal placeholder:text-pencil/60 ${
+            title ? '' : 'sr-only focus:not-sr-only'
+          }`}
+          placeholder="Add a title"
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value)
+            save(build(e.target.value, blocks))
+          }}
+          onBlur={() => save.flush()}
+        />
+      ) : (
+        title && <h2 className="uppercase tracking-[0.05em]">{title}</h2>
+      )}
+      {editable && (
+        <button
+          className="no-print absolute top-0 right-0 px-1 text-pencil hover:text-ribbon"
+          aria-label="Passage options"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((o) => !o)}
+        >
+          ⋯
+        </button>
+      )}
 
       {menuOpen && (
-        <div className="no-print mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-sm border border-ink/20 px-3 py-2 text-sm">
+        <div className="no-print mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-sm border border-ink/20 px-3 py-2">
+          {!title && (
+            <button
+              className="link"
+              onClick={() => {
+                // Focus inside the tap so iOS opens the keyboard.
+                titleRef.current?.focus()
+                setMenuOpen(false)
+              }}
+            >
+              Add title
+            </button>
+          )}
           <label className="link cursor-pointer">
             Add photo
             <input
@@ -178,45 +190,51 @@ export function PassageView({ passage, editable, today, onSave, onMove, onDelete
             />
           ) : (
             b.text.trim() && (
-              <p key={`t${i}`} className="leading-8 whitespace-pre-wrap">
+              <p key={`t${i}`} className="whitespace-pre-wrap">
                 {b.text}
               </p>
             )
           )
         ) : (
-          <figure key={b.id} className="my-6 sm:mx-6">
-            <Photo image={b} onOpen={() => setViewing(b)} />
-            {editable ? (
-              <div className="mt-2 flex items-baseline gap-3">
-                <input
-                  aria-label="Caption"
-                  className="min-w-0 flex-1 bg-transparent font-type text-ribbon outline-none placeholder:text-ribbon/40"
-                  placeholder="Add a caption"
-                  value={b.caption}
-                  onChange={(e) => update(setCaption(blocks, b.id, e.target.value))}
-                  onBlur={() => save.flush()}
-                />
-                <button className="no-print shrink-0 text-sm text-pencil hover:text-ribbon" onClick={() => removePhoto(b)}>
-                  Remove
+          <figure key={b.id} className="mt-6 mb-2 sm:mx-6">
+            <div className="relative">
+              <Photo image={b} onOpen={() => setViewing(b)} />
+              {editable && (
+                <button
+                  className="no-print absolute -top-3 -right-3 z-10 grid size-8 place-items-center rounded-full bg-paper text-pencil shadow hover:text-ribbon"
+                  aria-label="Remove photo"
+                  onClick={() => removePhoto(b)}
+                >
+                  ×
                 </button>
-              </div>
+              )}
+            </div>
+            {editable ? (
+              <input
+                aria-label="Caption"
+                className="mt-1 w-full bg-transparent text-ribbon outline-none placeholder:text-ribbon/40"
+                placeholder="Add a caption"
+                value={b.caption}
+                onChange={(e) => update(setCaption(blocks, b.id, e.target.value))}
+                onBlur={() => save.flush()}
+              />
             ) : (
-              b.caption && <figcaption className="mt-2 font-type text-ribbon">{b.caption}</figcaption>
+              b.caption && <figcaption className="mt-1 text-ribbon">{b.caption}</figcaption>
             )}
           </figure>
         ),
       )}
 
-      {adding > 0 && <p className="my-4 animate-pulse text-sm text-ink-soft">Adding {adding === 1 ? 'photo' : `${adding} photos`}…</p>}
-      {photoError && <p className="my-2 text-sm text-ribbon">{photoError}</p>}
+      {adding > 0 && <p className="my-4 animate-pulse text-ink-soft">Adding {adding === 1 ? 'photo' : `${adding} photos`}…</p>}
+      {photoError && <p className="my-2 text-ribbon">{photoError}</p>}
 
       {passage.raw !== text && (
         <div className="no-print mt-1">
-          <button className="text-sm text-pencil hover:text-ribbon" onClick={() => setShowRaw((s) => !s)}>
+          <button className="text-pencil hover:text-ribbon" onClick={() => setShowRaw((s) => !s)}>
             {showRaw ? 'Hide original' : 'Show original'}
           </button>
           {showRaw && (
-            <p className="mt-2 border-l-2 border-pencil/40 pl-3 text-sm leading-7 whitespace-pre-wrap text-pencil">
+            <p className="mt-1 border-l border-pencil/60 pl-3 whitespace-pre-wrap text-pencil">
               {passage.raw}
             </p>
           )}

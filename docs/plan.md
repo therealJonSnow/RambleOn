@@ -148,3 +148,11 @@ Decisions made while building, on top of the ones above:
 - **Export:** `media/<id>.jpg` (decrypted), with each day's `.md` file referencing them inline. Restoring the zip re-uploads photos and remakes thumbnails. Restoring `journal.json` alone keeps passages, but their photos show as unavailable.
 - **Tappable links in notes:** the note's text box stays in place (so iOS opens the keyboard on the first tap), with a layer of links drawn over it when it isn't focused. Only the links take taps.
 - **Search** lives at the top of the Days page and covers passages, titles, captions, margin notes and notes. It runs on the device, newest first.
+
+## Design notes (typewriter page)
+- **One typeface, one size:** Special Elite at 17px everywhere, as on a real typewriter. Hierarchy comes only from CAPITALS, typed underlines (headings), the red half of the ribbon (captions, links, active nav), spacing, and typed rules (`- - -`). Bold becomes underline. Courier Prime is no longer bundled.
+- **Day pages are binder sheets:** paper grain and fibres (SVG noise as a CSS background, so it's cheap to render), punched holes, and a faint red margin rule. The ink effect from the mockups (SVG filters on text) was left out for scrolling performance on iPhone.
+- **Times aren't printed.** Passages are separated by `* * *`; titles are typed in capitals. The time is still stored (ordering, export, search) and shows faintly only while you're writing a new passage. "Add title" lives in the passage's ⋯ menu.
+- **Lists are slips of paper:** Days, search results and All notes show each item on its own small sheet (no holes or margin), tilted a fraction.
+- **Settings is a plain page:** grouped panels, no paper.
+- Dark mode is the same design on night paper.

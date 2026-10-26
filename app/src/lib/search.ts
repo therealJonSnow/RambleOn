@@ -36,7 +36,9 @@ export function search(query: string, passages: Passage[], notes: Note[]): Searc
   const hits: SearchHit[] = []
   for (const p of passages) {
     const captions = imagesOf(p).map((i) => i.caption).filter(Boolean)
-    const s = snippet([p.title, p.text, ...captions].filter(Boolean).join(' · '), q)
+    // The title is shown separately, so only use it for the extract when
+    // the match is nowhere else.
+    const s = snippet([p.text, ...captions].filter(Boolean).join(' · '), q) ?? snippet(p.title, q)
     if (s) hits.push({ kind: p.kind, id: p.id, journalDate: p.journalDate, writtenAt: p.writtenAt, title: p.title, ...s })
   }
   for (const n of notes) {
