@@ -6,18 +6,16 @@ import { supabase } from '../lib/backend'
 // tier without custom SMTP, and iCloud Keychain fills it in with Face ID
 // inside the installed app.
 export function SignInPage() {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+  const [mode, setMode] = useState<'signin' | 'signup' | 'confirm'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [info, setInfo] = useState('')
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     setBusy(true)
     setError('')
-    setInfo('')
     const credentials = { email: email.trim(), password }
     if (mode === 'signin') {
       const { error } = await supabase!.auth.signInWithPassword(credentials)
@@ -28,11 +26,29 @@ export function SignInPage() {
         setError(/signups? not allowed|disabled/i.test(error.message) ? 'Sign-ups are turned off for this journal.' : error.message)
       } else if (!data.session) {
         // "Confirm email" is still on in Supabase.
-        setInfo('Account created. Confirm it from the email Supabase sent, then sign in.')
-        setMode('signin')
+        setPassword('')
+        setMode('confirm')
       }
     }
     setBusy(false)
+  }
+
+  if (mode === 'confirm') {
+    return (
+      <Screen title="Check your email">
+        <p className="mb-4">
+          Your account is created. Supabase has sent a confirmation link to <strong>{email.trim()}</strong>. Open it,
+          then come back here and sign in.
+        </p>
+        <p className="mb-6 text-sm text-ink-soft">
+          Self-hosting? You can skip this step: turn off <em>Confirm email</em> under Authentication → Sign In /
+          Providers → Email in Supabase.
+        </p>
+        <button className="btn-primary w-full" onClick={() => setMode('signin')}>
+          I’ve confirmed, sign in
+        </button>
+      </Screen>
+    )
   }
 
   const signup = mode === 'signup'
@@ -65,11 +81,6 @@ export function SignInPage() {
           hint={signup ? 'At least 10 characters. Let your password manager create one.' : undefined}
         />
         <ErrorText>{error}</ErrorText>
-        {info && (
-          <p role="status" className="mb-4">
-            {info}
-          </p>
-        )}
         <div className="flex items-center justify-between gap-4">
           <button
             type="button"
@@ -77,7 +88,6 @@ export function SignInPage() {
             onClick={() => {
               setMode(signup ? 'signin' : 'signup')
               setError('')
-              setInfo('')
             }}
           >
             {signup ? 'Sign in instead' : 'Create account'}
