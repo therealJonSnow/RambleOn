@@ -78,7 +78,6 @@ function NoteItem({ note, onSave, onDelete }: { note: Note; onSave(n: Note): voi
           else onDelete(note) // you cleared it: that's a delete
         }}
       />
-      {note.pending && <span className="shrink-0 pt-2 text-xs text-ink-soft">not synced</span>}
     </li>
   )
 }

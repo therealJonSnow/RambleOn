@@ -249,7 +249,6 @@ function MarginNotes({
         <div key={m.id} className="group mb-4">
           <p className="text-xs tracking-wider uppercase">
             Margin note · {formatShortDate(m.writtenAt)} {formatTime(m.writtenAt)}
-            {m.pending && ' · not synced'}
             <button
               className="no-print ml-3 normal-case opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-ribbon"
               onClick={() => confirm('Delete this margin note?') && onDelete(m)}

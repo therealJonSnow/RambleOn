@@ -112,11 +112,6 @@ export function PassageView({ passage, editable, today, onSave, onMove, onDelete
         ) : (
           title && <h2 className="min-w-0 flex-1 font-display text-lg">{title}</h2>
         )}
-        {passage.pending && (
-          <span className="shrink-0 text-xs text-ink-soft" title="Saved on this device, waiting to upload">
-            not synced
-          </span>
-        )}
         {editable && (
           <button
             className="no-print ml-auto shrink-0 px-2 text-ink-soft hover:text-ribbon"
