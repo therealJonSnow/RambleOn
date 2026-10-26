@@ -121,23 +121,6 @@ export function SettingsPage() {
           </p>
         </Section>
 
-        <Section title="New passage button">
-          <div className="flex gap-6">
-            {(['right', 'left'] as const).map((side) => (
-              <label key={side} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="side"
-                  className="size-4 accent-ribbon"
-                  checked={settings.buttonSide === side}
-                  onChange={() => update({ ...settings, buttonSide: side })}
-                />
-                Bottom {side}
-              </label>
-            ))}
-          </div>
-        </Section>
-
         <Section title="Filler words">
           <p className="mb-4 text-sm text-ink-soft">
             Removed from dictation when you save a passage. Your original words are always kept. Phrases like “you

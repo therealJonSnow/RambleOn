@@ -48,14 +48,12 @@ export interface Note {
 
 export interface Settings {
   rolloverHour: number
-  buttonSide: 'right' | 'left'
   fillers: FillerWord[]
   unlockedDates: string[]
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   rolloverHour: DEFAULT_ROLLOVER_HOUR,
-  buttonSide: 'right',
   fillers: DEFAULT_FILLERS,
   unlockedDates: [],
 }

@@ -15,9 +15,9 @@ Decisions from the planning session, worked through question by question, agains
 - **Notes area** at the bottom: text-first, works like a small notes app for that day. Holds links, podcast tips and jot-downs like "met so-and-so in the park".
   - Notes **stay on their day**. An **All notes** view lists every note newest first, searchable, showing the day each came from.
   - Notes are editable at all times, including on past days.
-- **Record button** in the **bottom-right corner** (thumb zone). A Setting moves it to bottom-left.
-  - Without the AI add-on, it opens a new passage with the keyboard up, and you use iOS keyboard dictation (two taps).
-  - With the AI add-on (M3), it records and transcribes in one tap.
+- **"+ Start a new passage…" line** at the end of the day's passages, like the notes area's "+ Add a note…". *Revised during M1:* this replaced a floating bottom-right button, which covered content.
+  - Without the AI add-on, tapping it opens the keyboard, and you use iOS keyboard dictation (two taps).
+  - With the AI add-on (M3), a mic on that line records and transcribes in one tap.
 
 ### Days and editing
 - **Day rollover at 4am**, changeable in Settings. Each passage stores its real time **and** a journal date, so a passage written at 00:40 belongs to the previous day.
@@ -102,7 +102,7 @@ Repo layout:
 ## Milestones
 
 ### M1: Capture and read
-PWA shell; email + password sign-in with sign-ups off; encryption plus recovery key; today page; passages with time headlines; notes area and All notes view; keyboard dictation flow; filler removal with editable list and raw text kept; 4am rollover; locked past days and margin notes; local save and upload on reconnect; export zip plus restore; typewriter styling; record button can move to the left; keep-alive Action.
+PWA shell; email + password sign-in with sign-ups off; encryption plus recovery key; today page; passages with time headlines; notes area and All notes view; keyboard dictation flow; filler removal with editable list and raw text kept; 4am rollover; locked past days and margin notes; local save and upload on reconnect; export zip plus restore; typewriter styling; keep-alive Action.
 **Done when:** Jonny has used it from bed for a week without missing a night.
 
 ### M2: Images, tappable links, search
@@ -136,8 +136,7 @@ Decisions made while building, on top of the ones above:
 - **Key design:** a random master key encrypts everything. The vault stores it twice, wrapped by the passphrase (PBKDF2-SHA256, 600k iterations) and by the recovery key. Each ciphertext is bound to its table and row id. The vault is only saved after the recovery key has been shown.
 - **Versioned rows:** each passage and note has a `version`, and saves only apply if the version matches. On a mismatch the incoming save wins and the other version becomes a "Conflict copy" note.
 - **Settings are cached on the device** (encrypted) so writing works offline.
-- **The new-passage button uses a pen icon**, not a mic, because without the AI add-on it opens the keyboard. It becomes a mic in M3.
-- **The composer is always in the page**, so it can take focus inside the button tap. iOS only opens the keyboard when focus happens in a user gesture.
+- **New passages start from a line on the page**, not a floating button. Tapping "+ Start a new passage…" focuses a real text box, so iOS opens the keyboard on the first tap. In M3 a mic icon on that line can start AI transcription.
 
 ## Build notes (M2)
 - **Passages with photos are blocks**, always shaped `text, (photo, text)*`, so there is somewhere to type before, between and after photos. Passages without photos keep plain text. `text` is kept as the joined text blocks, for search and export.

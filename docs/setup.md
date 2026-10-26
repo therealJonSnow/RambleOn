@@ -69,4 +69,4 @@ Then run it once by hand from the **Actions** tab to check it works.
 
 Open your Netlify URL in Safari → **Share** → **Add to Home Screen**. Open it from the home screen, sign in (Keychain fills in your password), and enter your passphrase once.
 
-To dictate: tap the red button (bottom right), then the mic key on the keyboard.
+To dictate: tap **Start a new passage…** below today's passages, then the mic key on the keyboard.

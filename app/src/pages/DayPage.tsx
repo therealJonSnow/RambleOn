@@ -4,7 +4,6 @@ import { AutoTextarea } from '../components/AutoTextarea'
 import { Layout, Sheet } from '../components/Layout'
 import { NotesArea } from '../components/NotesArea'
 import { PassageView } from '../components/PassageView'
-import { RecordButton } from '../components/RecordButton'
 import {
   addDays,
   formatLongDate,
@@ -23,7 +22,6 @@ export function DayPage() {
   const params = useParams()
   const { journal, settings, today, syncRevision, updateSettings } = useJournal()
   const date = params.date ?? today
-  const isToday = date === today
   const editable = isDayEditable(date, today, settings.unlockedDates)
 
   const [day, setDay] = useState<DayContent | null>(null)
@@ -52,12 +50,16 @@ export function DayPage() {
 
   // --- Composer
 
+  // Tapping "Start a new passage…" begins a draft, timed from that moment.
   function startPassage() {
-    // Focus synchronously inside the tap, or iOS won't open the keyboard.
-    composerRef.current?.focus()
-    if (!draft) {
-      const d: Draft = { id: crypto.randomUUID(), writtenAt: new Date().toISOString(), journalDate: date, raw: '' }
-      setDraft(d)
+    if (!draft) setDraft({ id: crypto.randomUUID(), writtenAt: new Date().toISOString(), journalDate: date, raw: '' })
+  }
+
+  // Tapped in and out without writing anything: quietly put the line back.
+  function abandonIfEmpty() {
+    if (draft && !draft.raw.trim()) {
+      void journal.clearDraft()
+      setDraft(null)
     }
   }
 
@@ -131,7 +133,7 @@ export function DayPage() {
     updateSettings({ ...settings, unlockedDates: settings.unlockedDates.filter((d) => d !== date) })
 
   const composing = draft !== null
-  const empty = day && day.passages.length === 0 && !composing
+  const empty = day && day.passages.length === 0 && !editable
 
   return (
     <Layout>
@@ -179,34 +181,42 @@ export function DayPage() {
             ))}
             {empty && (
               <p className="mb-10 text-pencil">
-                {isToday ? 'Nothing yet today. Tap the button to start a passage.' : 'Nothing was written on this day.'}
+                Nothing was written on this day.
               </p>
             )}
           </>
         )}
 
-        {/* Always in the DOM so it can take focus inside the button tap. */}
-        {editable && (
-          <section className={composing ? 'mb-10' : 'pointer-events-none absolute h-0 overflow-hidden opacity-0'} aria-hidden={!composing}>
+        {/* The next line of the page: tap it to start writing. */}
+        {editable && day && (
+          <section className="mb-10" aria-label="New passage">
             {draft && (
               <header className="mb-1 flex items-baseline gap-3">
                 <time className="font-display text-lg text-ribbon">{formatTime(draft.writtenAt)}</time>
                 <span className="text-sm text-pencil">Tap the mic on your keyboard to dictate</span>
               </header>
             )}
-            <AutoTextarea
-              ref={composerRef}
-              aria-label="New passage"
-              placeholder="Start talking…"
-              tabIndex={composing ? 0 : -1}
-              value={draft?.raw ?? ''}
-              onChange={(e) => {
-                const d = { ...(draft ?? { id: crypto.randomUUID(), writtenAt: new Date().toISOString(), journalDate: date }), raw: e.target.value }
-                setDraft(d)
-                persistDraft(d)
-              }}
-            />
-            {composing && (
+            <div className="flex gap-3">
+              {!draft && (
+                <span aria-hidden className="pt-0.5 leading-8 text-pencil">
+                  +
+                </span>
+              )}
+              <AutoTextarea
+                ref={composerRef}
+                aria-label="New passage"
+                placeholder={draft ? 'Start talking…' : 'Start a new passage…'}
+                value={draft?.raw ?? ''}
+                onFocus={startPassage}
+                onBlur={abandonIfEmpty}
+                onChange={(e) => {
+                  const d = { ...(draft ?? { id: crypto.randomUUID(), writtenAt: new Date().toISOString(), journalDate: date }), raw: e.target.value }
+                  setDraft(d)
+                  persistDraft(d)
+                }}
+              />
+            </div>
+            {composing && draft.raw.trim() && (
               <div className="no-print mt-3 flex justify-end gap-3">
                 <button className="btn" onClick={discardPassage}>
                   Discard
@@ -226,7 +236,6 @@ export function DayPage() {
         {day && <NotesArea date={date} notes={day.notes} onSave={saveNote} onDelete={deleteNote} onAdded={addNote} />}
       </Sheet>
 
-      {editable && !composing && <RecordButton side={settings.buttonSide} onPress={startPassage} />}
     </Layout>
   )
 }
