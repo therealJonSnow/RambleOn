@@ -22,10 +22,11 @@ import { useJournal } from '../state/journal'
 
 const arrow = 'grid size-11 place-items-center hover:text-ribbon active:text-ribbon'
 
-const Chevron = ({ d }: { d: string }) => (
-  <svg viewBox="0 0 16 16" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d={d} />
-  </svg>
+// Typed, like everything else, just larger so they're easy to hit.
+const Chevron = ({ children }: { children: string }) => (
+  <span aria-hidden className="text-[28px] leading-none">
+    {children}
+  </span>
 )
 
 const DateHeading = ({ date }: { date: string }) => (
@@ -195,7 +196,7 @@ export function DayPage() {
                       turn('back')
                     }}
                   >
-                    <Chevron d="M10 3L5 8l5 5" />
+                    <Chevron>&lt;</Chevron>
                   </Link>
                   {canForward ? (
                     <Link
@@ -207,11 +208,11 @@ export function DayPage() {
                         turn('forward')
                       }}
                     >
-                      <Chevron d="M6 3l5 5-5 5" />
+                      <Chevron>&gt;</Chevron>
                     </Link>
                   ) : (
                     <span className={`${arrow} opacity-25`} aria-hidden>
-                      <Chevron d="M6 3l5 5-5 5" />
+                      <Chevron>&gt;</Chevron>
                     </span>
                   )}
                 </nav>
