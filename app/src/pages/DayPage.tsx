@@ -78,7 +78,7 @@ export function DayPage() {
       }
       // Into the outbox (on the device) before the draft is cleared.
       await journal.savePassage(passage)
-      setDay((d) => d && { ...d, passages: [...d.passages, passage] })
+      setDay((d) => d && { ...d, passages: [...d.passages.filter((x) => x.id !== passage.id), passage] })
     }
     await journal.clearDraft()
     setDraft(null)
@@ -116,13 +116,15 @@ export function DayPage() {
     void journal.deleteNote(n)
     setDay((d) => d && { ...d, notes: d.notes.filter((x) => x.id !== n.id) })
   }
-  const addNote = (n: Note) => setDay((d) => d && { ...d, notes: [...d.notes, { ...n, pending: true }] })
+  // Replace rather than append: a refresh may already have brought it back.
+  const addNote = (n: Note) =>
+    setDay((d) => d && { ...d, notes: [...d.notes.filter((x) => x.id !== n.id), { ...n, pending: true }] })
 
   const addMargin = async (text: string) => {
     const now = new Date().toISOString()
     const margin: Passage = { id: crypto.randomUUID(), kind: 'margin', journalDate: date, writtenAt: now, title: '', raw: text, text, pending: true }
     await journal.savePassage(margin)
-    setDay((d) => d && { ...d, margins: [...d.margins, margin] })
+    setDay((d) => d && { ...d, margins: [...d.margins.filter((x) => x.id !== margin.id), margin] })
   }
 
   const relock = () =>
@@ -139,7 +141,6 @@ export function DayPage() {
             ‹
           </Link>
           <div className="text-center">
-            {isToday && <p className="label">Today</p>}
             <h1 className="font-display text-4xl leading-tight">{formatWeekday(date)}</h1>
             <p className="text-ink-soft">{formatLongDate(date)}</p>
           </div>

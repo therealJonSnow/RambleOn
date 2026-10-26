@@ -8,26 +8,55 @@ interface Props {
   notes: Note[]
   onSave(n: Note): void
   onDelete(n: Note): void
+  // A new note is finished (the box lost focus). Must replace any copy with the same id.
   onAdded(n: Note): void
 }
 
+const blankNote = (date: string): Note => ({
+  id: crypto.randomUUID(),
+  journalDate: date,
+  writtenAt: new Date().toISOString(),
+  text: '',
+})
+
 // The day's notes: text-first, always editable, like a small notes app.
 export function NotesArea({ date, notes, onSave, onDelete, onAdded }: Props) {
+  // The note being typed in the "Add a note…" box. It is saved as you type,
+  // so a page refresh can bring it back from the server: keep it out of the
+  // list until it's finished, or it shows up twice.
+  const [draft, setDraft] = useState(() => blankNote(date))
+  const [draftDate, setDraftDate] = useState(date)
+  if (draftDate !== date) {
+    setDraftDate(date)
+    setDraft(blankNote(date))
+  }
+  const listed = notes.filter((n) => n.id !== draft.id)
+
   return (
     <section className="mt-14 border-t border-dashed border-ink/30 pt-6" aria-label="Notes">
       <h2 className="label mb-4">Notes</h2>
       <ul>
-        {notes.map((n) => (
+        {listed.map((n) => (
           <NoteItem key={n.id} note={n} onSave={onSave} onDelete={onDelete} />
         ))}
       </ul>
-      <NewNote key={date} date={date} onSave={onSave} onDelete={onDelete} onAdded={onAdded} />
+      <NewNote
+        key={draft.id}
+        note={draft}
+        onSave={onSave}
+        onDelete={onDelete}
+        onDone={(finished) => {
+          if (finished) onAdded(finished)
+          setDraft(blankNote(date))
+        }}
+      />
     </section>
   )
 }
 
 function NoteItem({ note, onSave, onDelete }: { note: Note; onSave(n: Note): void; onDelete(n: Note): void }) {
   const [text, setText] = useState(note.text)
+  const [edited, setEdited] = useState(false)
   const save = useDebounced((t: string) => onSave({ ...note, text: t }), 800)
   return (
     <li className="mb-3 flex gap-3">
@@ -39,11 +68,13 @@ function NoteItem({ note, onSave, onDelete }: { note: Note; onSave(n: Note): voi
         value={text}
         onChange={(e) => {
           setText(e.target.value)
+          setEdited(true)
           if (e.target.value.trim()) save(e.target.value)
         }}
         onBlur={() => {
+          if (!edited) return
           if (text.trim()) save.flush()
-          else onDelete(note)
+          else onDelete(note) // you cleared it: that's a delete
         }}
       />
       {note.pending && <span className="shrink-0 pt-2 text-xs text-ink-soft">not synced</span>}
@@ -51,17 +82,19 @@ function NoteItem({ note, onSave, onDelete }: { note: Note; onSave(n: Note): voi
   )
 }
 
-const blankNote = (date: string): Note => ({
-  id: crypto.randomUUID(),
-  journalDate: date,
-  writtenAt: new Date().toISOString(),
-  text: '',
-})
-
-// Always on the page, so tapping it opens the keyboard straight away. Saved
-// as you type; on blur it joins the list above and the box resets.
-function NewNote({ date, onSave, onDelete, onAdded }: Omit<Props, 'notes'>) {
-  const [note, setNote] = useState(() => blankNote(date))
+// Always on the page, so tapping it opens the keyboard straight away.
+function NewNote({
+  note: initial,
+  onSave,
+  onDelete,
+  onDone,
+}: {
+  note: Note
+  onSave(n: Note): void
+  onDelete(n: Note): void
+  onDone(finished: Note | null): void
+}) {
+  const [note, setNote] = useState(initial)
   const [saved, setSaved] = useState(false)
   const save = useDebounced((n: Note) => {
     onSave(n)
@@ -85,13 +118,12 @@ function NewNote({ date, onSave, onDelete, onAdded }: Omit<Props, 'notes'>) {
         onBlur={() => {
           if (note.text.trim()) {
             save.flush()
-            if (!saved) onSave(note)
-            onAdded(note)
-          } else if (saved) {
-            onDelete(note)
+            onSave(note) // idempotent: same id, latest text
+            onDone(note)
+          } else {
+            if (saved) onDelete(note)
+            onDone(null)
           }
-          setNote(blankNote(date))
-          setSaved(false)
         }}
       />
     </div>
