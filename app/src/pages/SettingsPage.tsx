@@ -1,9 +1,9 @@
-import { strFromU8, unzipSync } from 'fflate'
 import { useState, type ReactNode } from 'react'
 import { Layout, Sheet } from '../components/Layout'
 import { demoMode } from '../lib/backend'
 import { formatLongDate } from '../lib/dates'
-import { buildExportZip, exportFileName, parseExport } from '../lib/export'
+import { buildExportZip, exportFileName, readExport } from '../lib/export'
+import { makeThumb } from '../lib/images'
 import { DEFAULT_FILLERS } from '../lib/filler'
 import type { Settings } from '../lib/models'
 import { useBackend } from '../state/backend'
@@ -44,14 +44,18 @@ export function SettingsPage() {
     setMessage('')
     try {
       const data = await journal.exportData(settings)
-      const blob = new Blob([buildExportZip(data) as Uint8Array<ArrayBuffer>], { type: 'application/zip' })
+      const { media, missing } = await journal.exportMedia(data)
+      const blob = new Blob([buildExportZip(data, media) as Uint8Array<ArrayBuffer>], { type: 'application/zip' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = exportFileName(data.exportedAt)
       a.click()
       setTimeout(() => URL.revokeObjectURL(url), 10_000)
-      setMessage(`Exported ${data.passages.length} passages and ${data.notes.length} notes.`)
+      setMessage(
+        `Exported ${data.passages.length} passages, ${data.notes.length} notes and ${media.size} photos.` +
+          (missing.length ? ` ${missing.length} photos couldn’t be downloaded and are missing from the export.` : ''),
+      )
     } catch (e) {
       setMessage(`Export failed: ${e instanceof Error ? e.message : String(e)}`)
     } finally {
@@ -63,16 +67,14 @@ export function SettingsPage() {
     setBusy(true)
     setMessage('')
     try {
-      const bytes = new Uint8Array(await file.arrayBuffer())
-      const json = file.name.endsWith('.zip') ? strFromU8(unzipSync(bytes)['journal.json'] ?? new Uint8Array()) : strFromU8(bytes)
-      const data = parseExport(json)
+      const { data, media } = readExport(file.name, new Uint8Array(await file.arrayBuffer()))
       const ok = confirm(
-        `Restore ${data.passages.length} passages and ${data.notes.length} notes from ${formatLongDate(data.exportedAt.slice(0, 10))}?\n\nRecords that already exist are overwritten with the version in the file. Your settings are replaced too.`,
+        `Restore ${data.passages.length} passages, ${data.notes.length} notes and ${media.size} photos from ${formatLongDate(data.exportedAt.slice(0, 10))}?\n\nRecords that already exist are overwritten with the version in the file. Your settings are replaced too.`,
       )
       if (!ok) return
-      const result = await journal.restore(data)
+      const result = await journal.restore(data, media, makeThumb)
       await updateSettings(await journal.loadSettings())
-      setMessage(`Restored ${result.passages} passages and ${result.notes} notes.`)
+      setMessage(`Restored ${result.passages} passages, ${result.notes} notes and ${result.photos} photos.`)
     } catch (e) {
       setMessage(`Restore failed: ${e instanceof Error ? e.message : String(e)}`)
     } finally {
@@ -230,7 +232,7 @@ export function SettingsPage() {
 
         <Section title="Export and restore">
           <p className="mb-4 text-sm text-ink-soft">
-            Downloads everything as a zip: a Markdown page per day plus <code>journal.json</code> for restoring.{' '}
+            Downloads everything as a zip: a Markdown page per day, your photos, and <code>journal.json</code> for restoring.{' '}
             <strong>The export is not encrypted</strong>, so keep it somewhere safe.
           </p>
           <div className="flex flex-wrap items-center gap-3">

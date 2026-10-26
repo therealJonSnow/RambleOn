@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Note } from '../lib/models'
 import { useDebounced } from '../lib/useDebounced'
 import { AutoTextarea } from './AutoTextarea'
+import { LinkedTextarea } from './LinkedTextarea'
 
 interface Props {
   date: string
@@ -63,7 +64,7 @@ function NoteItem({ note, onSave, onDelete }: { note: Note; onSave(n: Note): voi
       <span aria-hidden className="pt-0.5 leading-8 text-pencil">
         –
       </span>
-      <AutoTextarea
+      <LinkedTextarea
         aria-label="Note"
         value={text}
         onChange={(e) => {

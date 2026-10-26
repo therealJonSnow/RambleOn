@@ -1,7 +1,8 @@
-import { decryptJson, encryptJson } from './crypto'
+import { imagesOf } from './blocks'
+import { decryptBytes, decryptJson, encryptBytes, encryptJson } from './crypto'
 import { formatTime } from './dates'
 import { buildExportData, type ExportData } from './export'
-import type { LocalDb } from './localdb'
+import { isRowItem, type LocalDb } from './localdb'
 import { DEFAULT_SETTINGS, type Note, type NotePayload, type Passage, type PassagePayload, type Settings } from './models'
 import type { EncryptedRow, JournalStore, Table } from './store/types'
 import { SyncEngine, type SyncStatus } from './sync'
@@ -21,7 +22,7 @@ export interface DayContent {
   complete: boolean
 }
 
-const ctx = (table: Table | 'settings' | 'draft', id = '') => `${table}:${id}`
+const ctx = (table: Table | 'settings' | 'draft' | 'media', id = '') => `${table}:${id}`
 
 // The app's view of the journal: encrypts on the way out, decrypts on the way
 // in, and routes every change through the on-device outbox.
@@ -47,7 +48,7 @@ export class Journal {
   // --- Encoding
 
   async encodePassage(p: Passage): Promise<EncryptedRow> {
-    const payload: PassagePayload = { title: p.title, raw: p.raw, text: p.text }
+    const payload: PassagePayload = { title: p.title, raw: p.raw, text: p.text, ...(p.blocks ? { blocks: p.blocks } : {}) }
     return {
       id: p.id,
       kind: p.kind,
@@ -101,7 +102,7 @@ export class Journal {
 
     const pending = new Set<string>()
     for (const item of await this.sync.pending()) {
-      if (item.table !== table) continue
+      if (!isRowItem(item) || item.table !== table) continue
       if (item.op === 'delete') {
         byId.delete(item.id)
       } else if (journalDate === undefined || item.row.journalDate === journalDate) {
@@ -150,6 +151,52 @@ export class Journal {
 
   async deletePassage(p: Passage): Promise<void> {
     await this.sync.queueDelete('passages', p.id, p.journalDate)
+    for (const img of imagesOf(p)) await this.deleteImage(img.id)
+  }
+
+  // --- Photos
+  // Stored encrypted at "<id>" (full size) and "<id>.thumb". Decrypted copies
+  // are kept in memory as object URLs while the app is open.
+
+  private imageUrls = new Map<string, Promise<string | null>>()
+
+  private async putImageFile(path: string, plain: Uint8Array<ArrayBuffer>) {
+    await this.sync.queuePutMedia(path, await encryptBytes(this.key, ctx('media', path), plain))
+  }
+
+  async saveImage(id: string, full: Uint8Array<ArrayBuffer>, thumb: Uint8Array<ArrayBuffer>): Promise<void> {
+    this.imageUrls.set(id, Promise.resolve(URL.createObjectURL(new Blob([full], { type: 'image/jpeg' }))))
+    this.imageUrls.set(`${id}.thumb`, Promise.resolve(URL.createObjectURL(new Blob([thumb], { type: 'image/jpeg' }))))
+    await this.putImageFile(`${id}.thumb`, thumb)
+    await this.putImageFile(id, full)
+  }
+
+  // Decrypted bytes: from the outbox if not uploaded yet, else from storage.
+  async loadImageBytes(path: string): Promise<Uint8Array<ArrayBuffer> | null> {
+    const blob = (await this.sync.pendingMedia(path)) ?? (await this.store.getMedia(path))
+    return blob ? decryptBytes(this.key, ctx('media', path), blob) : null
+  }
+
+  // An object URL for <img>, or null if the photo is missing.
+  imageUrl(id: string, variant: 'thumb' | 'full'): Promise<string | null> {
+    const path = variant === 'thumb' ? `${id}.thumb` : id
+    let url = this.imageUrls.get(path)
+    if (!url) {
+      url = this.loadImageBytes(path).then((b) => (b ? URL.createObjectURL(new Blob([b], { type: 'image/jpeg' })) : null))
+      // Don't cache failures (e.g. offline): try again next time.
+      url.then((u) => u ?? this.imageUrls.delete(path), () => this.imageUrls.delete(path))
+      this.imageUrls.set(path, url)
+    }
+    return url
+  }
+
+  async deleteImage(id: string): Promise<void> {
+    for (const path of [id, `${id}.thumb`]) {
+      const url = this.imageUrls.get(path)
+      this.imageUrls.delete(path)
+      void url?.then((u) => u && URL.revokeObjectURL(u), () => {})
+      await this.sync.queueDeleteMedia(path)
+    }
   }
 
   async saveNote(n: Note): Promise<void> {
@@ -182,10 +229,40 @@ export class Journal {
     return buildExportData(await this.loadAllPassages(), await this.loadAllNotes(), settings)
   }
 
+  // Decrypted full-size photos for the export's media/ folder. Missing ones
+  // are listed rather than failing the whole export.
+  async exportMedia(data: ExportData): Promise<{ media: Map<string, Uint8Array<ArrayBuffer>>; missing: string[] }> {
+    const media = new Map<string, Uint8Array<ArrayBuffer>>()
+    const missing: string[] = []
+    for (const p of data.passages) {
+      for (const img of imagesOf(p)) {
+        const bytes = await this.loadImageBytes(img.id)
+        if (bytes) media.set(img.id, bytes)
+        else missing.push(img.id)
+      }
+    }
+    return { media, missing }
+  }
+
   // Writes every record from an export straight to the server (needs a
   // connection). Restoring the same file twice is harmless: records are
   // matched by id and overwritten.
-  async restore(data: ExportData): Promise<{ passages: number; notes: number }> {
+  async restore(
+    data: ExportData,
+    media: Map<string, Uint8Array<ArrayBuffer>> = new Map(),
+    thumbnail: (full: Uint8Array<ArrayBuffer>) => Promise<Uint8Array<ArrayBuffer>> = async (full) => full,
+  ): Promise<{ passages: number; notes: number; photos: number }> {
+    let photos = 0
+    for (const p of data.passages) {
+      for (const img of imagesOf(p)) {
+        const full = media.get(img.id)
+        if (!full) continue // journal.json on its own: the photo shows as missing
+        await this.store.putMedia(img.id, await encryptBytes(this.key, ctx('media', img.id), full))
+        const thumb = await thumbnail(full)
+        await this.store.putMedia(`${img.id}.thumb`, await encryptBytes(this.key, ctx('media', `${img.id}.thumb`), thumb))
+        photos++
+      }
+    }
     const put = async (table: Table, row: EncryptedRow) => {
       let result = await this.store.upsertRow(table, row)
       if (!result.ok) result = await this.store.upsertRow(table, { ...row, version: result.current.version })
@@ -201,7 +278,7 @@ export class Journal {
       await put('notes', await this.encodeNote(n))
     }
     await this.saveSettings({ ...DEFAULT_SETTINGS, ...data.settings })
-    return { passages: data.passages.length, notes: data.notes.length }
+    return { passages: data.passages.length, notes: data.notes.length, photos }
   }
 
   // --- Settings

@@ -18,6 +18,7 @@
   --color-pencil: #857d70;
   --color-ribbon: #b3261e;
   --color-ribbon-ink: #fdf8ee;
+  --color-print: #ffffff;
 }
 
 /* Night paper: easier on the eyes in bed. */
@@ -31,6 +32,7 @@
     --color-pencil: #958d80;
     --color-ribbon: #e0574c;
     --color-ribbon-ink: #1e1b17;
+    --color-print: #cfc8ba;
   }
 }
 
@@ -76,6 +78,26 @@
   }
   .typed-field:focus {
     background: color-mix(in srgb, var(--color-paper-edge) 35%, transparent);
+  }
+  /* A print taped onto the page, slightly askew. */
+  .taped-photo {
+    rotate: -0.6deg;
+  }
+  figure:nth-of-type(even) .taped-photo {
+    rotate: 0.7deg;
+  }
+  .taped-photo::before {
+    content: '';
+    position: absolute;
+    top: -0.6rem;
+    left: 50%;
+    width: 5.5rem;
+    height: 1.4rem;
+    translate: -50% 0;
+    rotate: -2deg;
+    background: color-mix(in srgb, var(--color-paper-edge) 75%, transparent);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+    z-index: 1;
   }
   .link {
     @apply underline decoration-dotted underline-offset-4 hover:text-ribbon;

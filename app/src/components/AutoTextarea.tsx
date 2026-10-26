@@ -1,4 +1,10 @@
-import { useLayoutEffect, useRef, type Ref, type TextareaHTMLAttributes } from 'react'
+import { useEffect, useLayoutEffect, useRef, type Ref, type TextareaHTMLAttributes } from 'react'
+
+function fit(el: HTMLTextAreaElement | null) {
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
 
 // A textarea that grows with its content, styled to look like the typed page.
 export function AutoTextarea({
@@ -9,12 +15,24 @@ export function AutoTextarea({
 }: TextareaHTMLAttributes<HTMLTextAreaElement> & { ref?: Ref<HTMLTextAreaElement>; value: string }) {
   const inner = useRef<HTMLTextAreaElement | null>(null)
 
-  useLayoutEffect(() => {
+  useLayoutEffect(() => fit(inner.current), [value])
+
+  // Wrapping also changes when the typewriter font finishes loading or the
+  // width changes (rotation, window resize), so measure again then.
+  useEffect(() => {
     const el = inner.current
     if (!el) return
-    el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
-  }, [value])
+    let width = el.clientWidth
+    const observer = new ResizeObserver(() => {
+      if (el.clientWidth !== width) {
+        width = el.clientWidth
+        fit(el)
+      }
+    })
+    observer.observe(el)
+    void document.fonts?.ready.then(() => fit(el))
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <textarea

@@ -2,6 +2,25 @@ import { DEFAULT_ROLLOVER_HOUR } from './dates'
 import { DEFAULT_FILLERS, type FillerWord } from './filler'
 import type { PassageKind } from './store/types'
 
+export interface TextBlock {
+  type: 'text'
+  text: string
+}
+
+// A photo taped into the page. The encrypted files live in storage at
+// `<id>` (full size) and `<id>.thumb`; this block holds only the details.
+export interface ImageBlock {
+  type: 'image'
+  id: string
+  caption: string
+  width: number
+  height: number
+  // When the photo was taken (local time from the camera), if known.
+  takenAt?: string
+}
+
+export type Block = TextBlock | ImageBlock
+
 export interface Passage {
   id: string
   kind: PassageKind
@@ -11,8 +30,11 @@ export interface Passage {
   title: string
   // Exactly what was dictated or typed.
   raw: string
-  // What the page shows: raw with fillers removed, plus any edits.
+  // What the page shows: raw with fillers removed, plus any edits. With
+  // photos, this is the text blocks joined (kept for search and export).
   text: string
+  // Only present once a photo has been added: text and photos in order.
+  blocks?: Block[]
   pending?: boolean
 }
 
@@ -39,5 +61,5 @@ export const DEFAULT_SETTINGS: Settings = {
 }
 
 // The parts of each record that are encrypted.
-export type PassagePayload = Pick<Passage, 'title' | 'raw' | 'text'>
+export type PassagePayload = Pick<Passage, 'title' | 'raw' | 'text' | 'blocks'>
 export type NotePayload = Pick<Note, 'text'>

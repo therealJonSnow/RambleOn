@@ -203,4 +203,40 @@ export class SupabaseStore implements JournalStore {
       check(error)
     })
   }
+
+  // Private bucket; storage policies limit each user to their own folder.
+  private mediaPath(path: string) {
+    return `${this.userId}/${path}`
+  }
+
+  putMedia(path: string, bytes: Uint8Array<ArrayBuffer>) {
+    return guard(async () => {
+      const { error } = await this.db.storage
+        .from('media')
+        .upload(this.mediaPath(path), new Blob([bytes]), { upsert: true, contentType: 'application/octet-stream' })
+      if (error) throw toStoreError(error)
+    })
+  }
+
+  getMedia(path: string) {
+    return guard(async () => {
+      const { data, error } = await this.db.storage.from('media').download(this.mediaPath(path))
+      if (error) {
+        if (/not.?found|404/i.test(`${error.name} ${error.message} ${(error as { status?: number }).status ?? ''}`)) return null
+        throw toStoreError(error)
+      }
+      return new Uint8Array(await data.arrayBuffer())
+    })
+  }
+
+  deleteMedia(path: string) {
+    return guard(async () => {
+      const { error } = await this.db.storage.from('media').remove([this.mediaPath(path)])
+      if (error) throw toStoreError(error)
+    })
+  }
+}
+
+function toStoreError(error: Error): Error {
+  return /fetch|network/i.test(error.message) ? new StoreUnavailableError(error.message) : error
 }

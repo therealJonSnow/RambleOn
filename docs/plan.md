@@ -138,3 +138,14 @@ Decisions made while building, on top of the ones above:
 - **Settings are cached on the device** (encrypted) so writing works offline.
 - **The new-passage button uses a pen icon**, not a mic, because without the AI add-on it opens the keyboard. It becomes a mic in M3.
 - **The composer is always in the page**, so it can take focus inside the button tap. iOS only opens the keyboard when focus happens in a user gesture.
+
+## Build notes (M2)
+- **Passages with photos are blocks**, always shaped `text, (photo, text)*`, so there is somewhere to type before, between and after photos. Passages without photos keep plain text. `text` is kept as the joined text blocks, for search and export.
+- **Photos go after the paragraph the cursor was last in** (decision C), added from the passage's ⋯ menu. Several at once are allowed.
+- **Photo processing on the device:** the date taken is read from the EXIF data, then the photo is re-encoded as JPEG (1600px, plus a 640px thumbnail), which drops all metadata including GPS. JPEG, not WebP, because Safari can't encode WebP from a canvas.
+- **Storage:** private `media` bucket, files at `<user id>/<photo id>` and `<photo id>.thumb`, encrypted and bound to their path. Storage policies limit each user to their own folder (`0002_media.sql`).
+- **Offline:** encrypted photo bytes wait in the on-device outbox like rows, and are shown from there until uploaded.
+- **Captions** are typed in ribbon red at body size, no size change, like the second colour on a typewriter ribbon.
+- **Export:** `media/<id>.jpg` (decrypted), with each day's `.md` file referencing them inline. Restoring the zip re-uploads photos and remakes thumbnails. Restoring `journal.json` alone keeps passages, but their photos show as unavailable.
+- **Tappable links in notes:** the note's text box stays in place (so iOS opens the keyboard on the first tap), with a layer of links drawn over it when it isn't focused. Only the links take taps.
+- **Search** lives at the top of the Days page and covers passages, titles, captions, margin notes and notes. It runs on the device, newest first.

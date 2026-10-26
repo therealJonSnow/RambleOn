@@ -203,3 +203,19 @@ export async function decryptJson<T>(key: CryptoKey, context: string, blob: stri
   )
   return JSON.parse(decoder.decode(pt)) as T
 }
+
+// Binary data (photos). Same scheme as encryptJson, without the JSON step.
+export async function encryptBytes(key: CryptoKey, context: string, bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+  const iv = randomBytes(IV_BYTES)
+  const ct = await subtle().encrypt({ name: 'AES-GCM', iv, additionalData: encoder.encode(context) }, key, bytes)
+  return concat(iv, new Uint8Array(ct))
+}
+
+export async function decryptBytes(key: CryptoKey, context: string, blob: Uint8Array): Promise<Uint8Array<ArrayBuffer>> {
+  const pt = await subtle().decrypt(
+    { name: 'AES-GCM', iv: blob.slice(0, IV_BYTES), additionalData: encoder.encode(context) },
+    key,
+    blob.slice(IV_BYTES),
+  )
+  return new Uint8Array(pt)
+}

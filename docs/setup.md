@@ -17,7 +17,11 @@ With no Supabase settings the app runs in **demo mode**: no sign-in, and the enc
 ## 2. Create the database
 
 1. In Supabase, create a new project.
-2. Open **SQL Editor**, paste the whole of [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql) and click **Run**.
+2. Open **SQL Editor** and run each file in [`supabase/migrations/`](../supabase/migrations/) in order: paste the whole file, click **Run**, then the next.
+   - `0001_init.sql`: tables, row-level security
+   - `0002_media.sql`: the private `media` bucket for photos
+
+   Already set up? Run only the files you haven't run yet. Each one runs once.
 
 ## 3. Set up sign-in
 

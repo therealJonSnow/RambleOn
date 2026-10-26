@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Layout, Sheet } from '../components/Layout'
+import { LinkedText } from '../components/LinkedText'
 import { formatLongDate, formatWeekday } from '../lib/dates'
 import type { Note } from '../lib/models'
 import { useJournal } from '../state/journal'
@@ -41,7 +42,9 @@ export function NotesPage() {
               <Link to={n.journalDate === today ? '/' : `/day/${n.journalDate}`} className="label hover:text-ribbon">
                 {formatWeekday(n.journalDate)} {formatLongDate(n.journalDate)}
               </Link>
-              <p className="leading-8 whitespace-pre-wrap">{n.text}</p>
+              <p className="leading-8 break-words whitespace-pre-wrap">
+                <LinkedText text={n.text} />
+              </p>
             </li>
           ))}
         </ul>

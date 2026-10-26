@@ -41,4 +41,8 @@ export interface JournalStore {
   // row.version (or the row is new), otherwise returns the current row.
   upsertRow(table: Table, row: EncryptedRow): Promise<UpsertResult>
   deleteRow(table: Table, id: string): Promise<void>
+  // Encrypted photo files, by path within the user's own folder.
+  putMedia(path: string, bytes: Uint8Array<ArrayBuffer>): Promise<void>
+  getMedia(path: string): Promise<Uint8Array<ArrayBuffer> | null>
+  deleteMedia(path: string): Promise<void>
 }

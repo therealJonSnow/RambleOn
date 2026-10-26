@@ -17,6 +17,7 @@ export interface SyncHandlers {
 }
 
 const outboxKey = (table: Table, id: string) => `${table}:${id}`
+const mediaKey = (path: string) => `media:${path}`
 
 export class SyncEngine {
   private store: JournalStore
@@ -56,6 +57,32 @@ export class SyncEngine {
     }
     await this.reportStatus()
     void this.flush()
+  }
+
+  // Photos are queued like rows: the encrypted bytes wait on the device until
+  // the upload is confirmed.
+  async queuePutMedia(path: string, bytes: Uint8Array<ArrayBuffer>): Promise<void> {
+    await this.local.putOutbox({ key: mediaKey(path), op: 'putMedia', path, bytes, queuedAt: now() })
+    await this.reportStatus()
+    void this.flush()
+  }
+
+  async queueDeleteMedia(path: string): Promise<void> {
+    const existing = await this.local.getOutbox(mediaKey(path))
+    if (existing?.op === 'putMedia') {
+      // Never uploaded: nothing to delete on the server.
+      await this.local.deleteOutbox(mediaKey(path))
+    } else {
+      await this.local.putOutbox({ key: mediaKey(path), op: 'deleteMedia', path, queuedAt: now() })
+    }
+    await this.reportStatus()
+    void this.flush()
+  }
+
+  // Encrypted bytes of a photo that hasn't uploaded yet, if any.
+  async pendingMedia(path: string): Promise<Uint8Array<ArrayBuffer> | null> {
+    const item = await this.local.getOutbox(mediaKey(path))
+    return item?.op === 'putMedia' ? item.bytes : null
   }
 
   pending(): Promise<OutboxItem[]> {
@@ -100,6 +127,16 @@ export class SyncEngine {
   }
 
   private async push(item: OutboxItem): Promise<void> {
+    if (item.op === 'putMedia') {
+      await this.store.putMedia(item.path, item.bytes)
+      await this.removeIfUnchanged(item)
+      return
+    }
+    if (item.op === 'deleteMedia') {
+      await this.store.deleteMedia(item.path)
+      await this.removeIfUnchanged(item)
+      return
+    }
     if (item.op === 'delete') {
       await this.store.deleteRow(item.table, item.id)
       await this.removeIfUnchanged(item)

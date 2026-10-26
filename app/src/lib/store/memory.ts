@@ -1,4 +1,4 @@
-import type { Vault } from '../crypto'
+import { fromBase64, toBase64, type Vault } from '../crypto'
 import type { DaySummary, EncryptedRow, JournalStore, Table, UpsertResult } from './types'
 
 interface Snapshot {
@@ -6,6 +6,7 @@ interface Snapshot {
   settings: string | null
   passages: EncryptedRow[]
   notes: EncryptedRow[]
+  media?: Record<string, string>
 }
 
 // In-memory store, used by tests and by demo mode (no Supabase configured),
@@ -14,6 +15,7 @@ export class MemoryStore implements JournalStore {
   private vault: Vault | null = null
   private settings: string | null = null
   private tables: Record<Table, Map<string, EncryptedRow>> = { passages: new Map(), notes: new Map() }
+  private media = new Map<string, Uint8Array<ArrayBuffer>>()
   private persistKey?: string
 
   constructor(persistKey?: string) {
@@ -26,6 +28,7 @@ export class MemoryStore implements JournalStore {
         this.settings = s.settings
         for (const r of s.passages) this.tables.passages.set(r.id, r)
         for (const r of s.notes) this.tables.notes.set(r.id, r)
+        for (const [path, b64] of Object.entries(s.media ?? {})) this.media.set(path, fromBase64(b64))
       }
     }
   }
@@ -37,8 +40,14 @@ export class MemoryStore implements JournalStore {
       settings: this.settings,
       passages: [...this.tables.passages.values()],
       notes: [...this.tables.notes.values()],
+      media: Object.fromEntries([...this.media].map(([path, b]) => [path, toBase64(b)])),
     }
-    localStorage.setItem(this.persistKey, JSON.stringify(s))
+    try {
+      localStorage.setItem(this.persistKey, JSON.stringify(s))
+    } catch (e) {
+      // Demo mode only: localStorage holds ~5MB, so lots of photos won't fit.
+      console.warn('Demo storage is full', e)
+    }
   }
 
   async getVault() {
@@ -95,5 +104,23 @@ export class MemoryStore implements JournalStore {
   async deleteRow(table: Table, id: string) {
     this.tables[table].delete(id)
     this.save()
+  }
+
+  async putMedia(path: string, bytes: Uint8Array<ArrayBuffer>) {
+    this.media.set(path, bytes.slice())
+    this.save()
+  }
+
+  async getMedia(path: string) {
+    return this.media.get(path)?.slice() ?? null
+  }
+
+  async deleteMedia(path: string) {
+    this.media.delete(path)
+    this.save()
+  }
+
+  mediaPaths(): string[] {
+    return [...this.media.keys()]
   }
 }

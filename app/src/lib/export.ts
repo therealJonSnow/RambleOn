@@ -1,9 +1,11 @@
-import { strToU8, zipSync } from 'fflate'
+import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
+import { blocksOf } from './blocks'
 import { formatLongDate, formatShortDate, formatTime, formatWeekday } from './dates'
 import type { Note, Passage, Settings } from './models'
 
 // Export format, version 1. The zip contains:
 //   days/YYYY-MM-DD.md – readable pages
+//   media/<id>.jpg     – photos, referenced from the pages
 //   journal.json       – everything, for restoring (raw text, times, settings)
 // Exports are unencrypted on purpose: a backup shouldn't depend on this app.
 
@@ -43,7 +45,16 @@ export function dayMarkdown(date: string, passages: Passage[], margins: Passage[
   const lines: string[] = [`# ${formatWeekday(date)}, ${formatLongDate(date)}`, '']
   for (const p of passages) {
     const time = formatTime(p.writtenAt)
-    lines.push(p.title ? `## ${time} · ${p.title}` : `## ${time}`, '', p.text.trim(), '')
+    lines.push(p.title ? `## ${time} · ${p.title}` : `## ${time}`, '')
+    for (const b of blocksOf(p)) {
+      if (b.type === 'text') {
+        if (b.text.trim()) lines.push(b.text.trim(), '')
+      } else {
+        const alt = b.caption.replace(/[[\]\n]/g, ' ').trim()
+        lines.push(`![${alt}](../media/${b.id}.jpg)`, '')
+        if (b.caption.trim()) lines.push(`*${b.caption.trim()}*`, '')
+      }
+    }
   }
   for (const m of margins) {
     const quoted = m.text.trim().split('\n').map((l) => `> ${l}`.trimEnd())
@@ -76,9 +87,30 @@ export function buildExportFiles(data: ExportData): Record<string, string> {
   return files
 }
 
-export function buildExportZip(data: ExportData): Uint8Array {
-  const files = buildExportFiles(data)
-  return zipSync(Object.fromEntries(Object.entries(files).map(([path, text]) => [path, strToU8(text)])))
+export function buildExportZip(data: ExportData, media: Map<string, Uint8Array> = new Map()): Uint8Array {
+  const files: Zippable = {}
+  for (const [path, text] of Object.entries(buildExportFiles(data))) files[path] = strToU8(text)
+  // Photos are already compressed: store them as they are.
+  for (const [id, bytes] of media) files[`media/${id}.jpg`] = [bytes, { level: 0 }]
+  return zipSync(files)
+}
+
+// Reads an export: a zip (journal.json plus photos) or a bare journal.json.
+export function readExport(name: string, bytes: Uint8Array): { data: ExportData; media: Map<string, Uint8Array<ArrayBuffer>> } {
+  const media = new Map<string, Uint8Array<ArrayBuffer>>()
+  if (!name.toLowerCase().endsWith('.zip')) return { data: parseExport(strFromU8(bytes)), media }
+  let files: Record<string, Uint8Array>
+  try {
+    files = unzipSync(bytes)
+  } catch {
+    throw new InvalidExportError('This zip file can’t be opened')
+  }
+  if (!files['journal.json']) throw new InvalidExportError('This zip has no journal.json')
+  for (const [path, file] of Object.entries(files)) {
+    const m = path.match(/^media\/([\w-]+)\.jpg$/)
+    if (m) media.set(m[1], new Uint8Array(file))
+  }
+  return { data: parseExport(strFromU8(files['journal.json'])), media }
 }
 
 export function exportFileName(exportedAt: string): string {
@@ -108,6 +140,16 @@ export function parseExport(json: string): ExportData {
       !isStr(p.raw) || !isStr(p.text) || !isStr(p.title) || !['passage', 'margin'].includes(p.kind)
     ) {
       throw new InvalidExportError('A passage in the export is malformed')
+    }
+    if (p.blocks !== undefined) {
+      const ok =
+        Array.isArray(p.blocks) &&
+        p.blocks.every((b) =>
+          b?.type === 'text'
+            ? isStr(b.text)
+            : b?.type === 'image' && /^[\w-]+$/.test(b.id) && isStr(b.caption) && typeof b.width === 'number' && typeof b.height === 'number',
+        )
+      if (!ok) throw new InvalidExportError('A passage in the export has malformed photos')
     }
   }
   for (const n of d.notes) {

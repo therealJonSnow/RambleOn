@@ -2,11 +2,12 @@ import 'fake-indexeddb/auto'
 import { strFromU8, unzipSync } from 'fflate'
 import { describe, expect, it } from 'vitest'
 import { createVault } from './crypto'
-import { buildExportZip, parseExport } from './export'
+import { buildExportZip, parseExport, readExport } from './export'
 import { Journal } from './journal'
 import { openLocalDb } from './localdb'
 import { DEFAULT_SETTINGS, type Note, type Passage } from './models'
 import { MemoryStore } from './store/memory'
+import { StoreUnavailableError } from './store/types'
 
 let n = 0
 async function freshJournal() {
@@ -151,5 +152,113 @@ describe('export and restore', () => {
     expect(() =>
       parseExport(JSON.stringify({ format: 'rambleon-export', version: 1, passages: [{ id: 1 }], notes: [] })),
     ).toThrow('malformed')
+  })
+})
+
+describe('photos', () => {
+  const jpeg = (n: number) => new Uint8Array([0xff, 0xd8, n, n, n, 0xff, 0xd9])
+
+  async function withPhoto() {
+    const ctx = await freshJournal()
+    const id = crypto.randomUUID()
+    await ctx.journal.saveImage(id, jpeg(1), jpeg(2))
+    const p = passage({
+      raw: 'Swanage. Trains.',
+      text: 'Swanage.\n\nTrains.',
+      blocks: [
+        { type: 'text', text: 'Swanage.' },
+        { type: 'image', id, caption: 'Steam train, Saturday', width: 1600, height: 1200, takenAt: '2026-10-24T14:05:09' },
+        { type: 'text', text: 'Trains.' },
+      ],
+    })
+    await ctx.journal.savePassage(p)
+    await ctx.journal.sync.flush()
+    return { ...ctx, id, p }
+  }
+
+  it('stores photos encrypted, readable back on another device', async () => {
+    const { store, journal, id } = await withPhoto()
+    const stored = await store.getMedia(id)
+    expect(stored).not.toBeNull()
+    expect([...stored!]).not.toEqual([...jpeg(1)])
+
+    const other = new Journal(store, journal.key, await openLocalDb(`journal-${n++}`))
+    expect(await other.loadImageBytes(id)).toEqual(jpeg(1))
+    expect(await other.loadImageBytes(`${id}.thumb`)).toEqual(jpeg(2))
+  })
+
+  it('keeps a photo on the device until it uploads', async () => {
+    const store = new MemoryStore()
+    const { key } = await createVault('passphrase', 1000)
+    const local = await openLocalDb(`journal-${n++}`)
+    const journal = new Journal(store, key, local)
+    const original = store.putMedia.bind(store)
+    store.putMedia = async () => {
+      throw new StoreUnavailableError()
+    }
+    const id = crypto.randomUUID()
+    await journal.saveImage(id, jpeg(1), jpeg(2))
+    await journal.sync.flush()
+    expect(await store.getMedia(id)).toBeNull()
+    expect(await journal.loadImageBytes(id)).toEqual(jpeg(1)) // from the outbox
+
+    store.putMedia = original
+    await journal.sync.flush()
+    expect(await store.getMedia(id)).not.toBeNull()
+    journal.sync.dispose()
+  })
+
+  it('deleting the passage deletes its photos', async () => {
+    const { store, journal, id, p } = await withPhoto()
+    await journal.deletePassage(p)
+    await journal.sync.flush()
+    expect(store.mediaPaths()).toEqual([])
+    expect(await store.getMedia(id)).toBeNull()
+  })
+
+  it('exports photos into media/ and references them from the day page', async () => {
+    const { journal, id } = await withPhoto()
+    const data = await journal.exportData(DEFAULT_SETTINGS)
+    const { media, missing } = await journal.exportMedia(data)
+    expect(missing).toEqual([])
+    const files = unzipSync(buildExportZip(data, media))
+    expect(files[`media/${id}.jpg`]).toEqual(jpeg(1))
+    const md = strFromU8(files['days/2026-10-25.md'])
+    expect(md).toContain(`Swanage.\n\n![Steam train, Saturday](../media/${id}.jpg)\n\n*Steam train, Saturday*\n\nTrains.`)
+  })
+
+  it('round-trips photos through a zip restore', async () => {
+    const { journal, id } = await withPhoto()
+    const data = await journal.exportData(DEFAULT_SETTINGS)
+    const zip = buildExportZip(data, (await journal.exportMedia(data)).media)
+
+    const fresh = await freshJournal()
+    const read = readExport('rambleon-export.zip', zip)
+    const result = await fresh.journal.restore(read.data, read.media)
+    expect(result.photos).toBe(1)
+    expect(await fresh.journal.loadImageBytes(id)).toEqual(jpeg(1))
+    const again = await fresh.journal.exportData(DEFAULT_SETTINGS)
+    expect(again.passages).toEqual(data.passages)
+  })
+
+  it('restoring journal.json alone keeps the passage but not the photo', async () => {
+    const { journal, id } = await withPhoto()
+    const data = await journal.exportData(DEFAULT_SETTINGS)
+    const fresh = await freshJournal()
+    const read = readExport('journal.json', new TextEncoder().encode(JSON.stringify(data)))
+    const result = await fresh.journal.restore(read.data, read.media)
+    expect(result.photos).toBe(0)
+    expect(await fresh.journal.loadImageBytes(id)).toBeNull()
+    expect((await fresh.journal.loadDay('2026-10-25')).passages[0].blocks).toHaveLength(3)
+  })
+
+  it('rejects malformed photo blocks', () => {
+    const bad = {
+      format: 'rambleon-export',
+      version: 1,
+      notes: [],
+      passages: [{ ...passage({}), blocks: [{ type: 'image', id: '../../etc', caption: '', width: 1, height: 1 }] }],
+    }
+    expect(() => parseExport(JSON.stringify(bad))).toThrow('malformed photos')
   })
 })

@@ -3,11 +3,20 @@ import type { EncryptedRow, Table } from './store/types'
 
 // On-device storage (IndexedDB):
 //   kv     – the non-extractable master key and the encrypted composer draft
-//   outbox – encrypted changes waiting to reach the server
+//   outbox – encrypted changes (rows and photos) waiting to reach the server
 
-export type OutboxItem =
+export type RowOutboxItem =
   | { key: string; table: Table; op: 'upsert'; row: EncryptedRow; queuedAt: string }
   | { key: string; table: Table; op: 'delete'; id: string; journalDate: string; queuedAt: string }
+
+// Photos: `bytes` is already encrypted.
+export type MediaOutboxItem =
+  | { key: string; op: 'putMedia'; path: string; bytes: Uint8Array<ArrayBuffer>; queuedAt: string }
+  | { key: string; op: 'deleteMedia'; path: string; queuedAt: string }
+
+export type OutboxItem = RowOutboxItem | MediaOutboxItem
+
+export const isRowItem = (item: OutboxItem): item is RowOutboxItem => item.op === 'upsert' || item.op === 'delete'
 
 interface Schema extends DBSchema {
   kv: { key: string; value: unknown }
