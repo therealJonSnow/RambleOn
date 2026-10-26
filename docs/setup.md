@@ -19,16 +19,13 @@ With no Supabase settings the app runs in **demo mode**: no sign-in, and the enc
 1. In Supabase, create a new project.
 2. Open **SQL Editor**, paste the whole of [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql) and click **Run**.
 
-## 3. Set up sign-in by emailed code
+## 3. Set up sign-in
 
-RambleOn signs in with a 6-digit code rather than a magic link, because a magic link opens in Safari instead of the installed app.
+RambleOn signs in with email and password, so it doesn't need Supabase to send any emails. That matters because on the free tier the email templates can't be edited without custom SMTP, and the built-in sender only allows a couple of emails an hour.
 
-1. **Authentication → Sign In / Providers → Email**: make sure Email is enabled.
-2. **Authentication → Emails → Magic Link** template: replace the body so it contains the code, e.g.
-
-   ```html
-   <p>Your RambleOn code is <strong>{{ .Token }}</strong></p>
-   ```
+**Authentication → Sign In / Providers → Email**:
+- make sure **Email** is enabled
+- switch off **Confirm email**. You're the only user, and sign-ups get turned off in step 5.
 
 ## 4. Connect the app
 
@@ -41,7 +38,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open the app, sign in with your email, choose a passphrase and **print your recovery key**.
+Open the app, choose **Create account**, then choose a passphrase and **print your recovery key**. Let iCloud Keychain (or your password manager) save the password; on iPhone it then fills in with Face ID.
 
 ## 5. Turn off sign-ups
 
@@ -66,6 +63,6 @@ Then run it once by hand from the **Actions** tab to check it works.
 
 ## 8. Install on your iPhone
 
-Open your Netlify URL in Safari → **Share** → **Add to Home Screen**. Open it from the home screen, sign in, and enter your passphrase once.
+Open your Netlify URL in Safari → **Share** → **Add to Home Screen**. Open it from the home screen, sign in (Keychain fills in your password), and enter your passphrase once.
 
 To dictate: tap the red button (bottom right), then the mic key on the keyboard.

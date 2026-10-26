@@ -39,7 +39,7 @@ Decisions from the planning session, worked through question by question, agains
   - Readable: dates and timestamps, needed for sorting.
   - A **printable recovery key** is shown once at setup.
   - The passphrase is entered once per device. The key is stored as a non-extractable `CryptoKey` in IndexedDB. Settings has a "lock journal" button.
-- **Sign-in: email one-time code** (a 6-digit code typed into the PWA). Magic links don't work well in installed iOS PWAs, because the link opens in Safari, which has separate storage.
+- **Sign-in: email + password**, saved and filled in by iCloud Keychain with Face ID. *Revised during M1:* the original choice was an email one-time code, but since June 2026 new free Supabase projects can't edit email templates without custom SMTP, and the default magic-link email doesn't include the code. Magic links don't suit installed iOS PWAs either, because the link opens in Safari, which has separate storage. "Confirm email" is turned off, so nothing depends on Supabase's rate-limited email sender.
 - **Sign-ups are turned off** once your account exists. The self-host guide makes this a required step.
 - Passkeys are a later upgrade.
 
@@ -87,7 +87,7 @@ Decisions from the planning session, worked through question by question, agains
 |---|---|
 | App | Vite + React + TypeScript, `vite-plugin-pwa`, React Router |
 | Styling | Tailwind v4. Typewriter theme tokens (paper, ink, ribbon red, typewriter fonts) defined in `@theme` |
-| Backend | Supabase: Postgres with row-level security, Auth (email one-time code), Storage, Edge Functions |
+| Backend | Supabase: Postgres with row-level security, Auth (email + password), Storage, Edge Functions |
 | Crypto | WebCrypto (AES-GCM, key derived from a passphrase) |
 | Tests | Vitest |
 | Docs | Astro Starlight, holding the self-host guide and landing page |
@@ -103,7 +103,7 @@ Repo layout:
 ## Milestones
 
 ### M1: Capture and read
-PWA shell; email one-time code sign-in with sign-ups off; encryption plus recovery key; today page; passages with time headlines; notes area and All notes view; keyboard dictation flow; filler removal with editable list and raw text kept; 4am rollover; locked past days and margin notes; local save and upload on reconnect; export zip plus restore; typewriter styling; record button can move to the left; keep-alive Action.
+PWA shell; email + password sign-in with sign-ups off; encryption plus recovery key; today page; passages with time headlines; notes area and All notes view; keyboard dictation flow; filler removal with editable list and raw text kept; 4am rollover; locked past days and margin notes; local save and upload on reconnect; export zip plus restore; typewriter styling; record button can move to the left; keep-alive Action.
 **Done when:** Jonny has used it from bed for a week without missing a night.
 
 ### M2: Images and links
