@@ -162,8 +162,8 @@ export function DayPage() {
   const empty = day && day.passages.length === 0 && !editable
 
   return (
-    <Layout wide>
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start lg:gap-8">
+    <Layout wide fill>
+      <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-8">
         <PageTurn
           canForward={canForward}
           onTurned={(t) => navigate(dayPath(target(t)))}
@@ -178,7 +178,7 @@ export function DayPage() {
           )}
         >
           {(turn) => (
-            <Sheet className="flex min-h-[125dvh] flex-col">
+            <Sheet className="flex flex-1 flex-col pb-[max(2rem,calc(env(safe-area-inset-bottom)+1.5rem))] sm:pb-[max(3rem,calc(env(safe-area-inset-bottom)+1.5rem))]">
               {/* The writing, then blank paper, with notes at the foot of the sheet. */}
               <div>
               {/* Back and forward sit together in the margin, level with the date,
@@ -300,30 +300,26 @@ export function DayPage() {
               {day && (day.margins.length > 0 || !editable) && (
                 <MarginNotes margins={day.margins} canAdd={!editable} onAdd={addMargin} onDelete={deletePassage} />
               )}
-
-
               </div>
-              {day && !wide && (
-                <div className="mt-auto">
-                  <NotesArea date={date} notes={day.notes} onSave={saveNote} onDelete={deleteNote} onAdded={addNote} />
-                </div>
-              )}
+              <div className="mt-auto">
+                {day && !wide && <NotesArea date={date} notes={day.notes} onSave={saveNote} onDelete={deleteNote} onAdded={addNote} />}
+                <p className="no-print mt-6 text-right">
+                  <Link to={`/print/${date}`} className="link text-pencil">
+                    Print this day
+                  </Link>
+                </p>
+              </div>
             </Sheet>
           )}
         </PageTurn>
 
         {day && wide && (
-          <aside className="sheet px-6 py-8 lg:sticky lg:top-4">
+          <aside className="sheet self-start px-6 py-8 lg:sticky lg:top-4">
             <NotesArea date={date} notes={day.notes} onSave={saveNote} onDelete={deleteNote} onAdded={addNote} separate />
           </aside>
         )}
       </div>
 
-      <p className="no-print mt-6 px-1 text-right">
-        <Link to={`/print/${date}`} className="link text-pencil">
-          Print this day
-        </Link>
-      </p>
     </Layout>
   )
 }

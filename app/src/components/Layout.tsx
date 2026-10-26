@@ -9,11 +9,17 @@ import { useSustained } from '../lib/useSustained'
 const navClass = ({ isActive }: { isActive: boolean }) =>
   `uppercase tracking-[0.06em] ${isActive ? 'text-ribbon underline underline-offset-[6px] decoration-1' : 'hover:text-ribbon'}`
 
-export function Layout({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
+// `fill`: the page runs to the bottom edge of the screen, as if it carries
+// on below, and grows past it only when there's more on it than fits.
+export function Layout({ children, wide = false, fill = false }: { children: ReactNode; wide?: boolean; fill?: boolean }) {
   const { status } = useJournal()
   const serverDown = useSustained(status.unavailable && navigator.onLine, 15_000)
   return (
-    <div className={`mx-auto max-w-2xl ${wide ? 'lg:max-w-5xl' : ''} px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-32 sm:px-6`}>
+    <div
+      className={`mx-auto max-w-2xl ${wide ? 'lg:max-w-5xl' : ''} px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 ${
+        fill ? 'flex min-h-dvh flex-col' : 'pb-32'
+      }`}
+    >
       <nav className="no-print mb-3 flex items-center justify-between gap-4 px-1">
         <NavLink to="/" end className={navClass}>
           Today
@@ -49,8 +55,7 @@ export function Layout({ children, wide = false }: { children: ReactNode; wide?:
 }
 
 // A punched sheet of typing paper. Content sits right of the margin rule.
-// Taller than the screen, so there's always room to keep writing.
-export function Sheet({ children, className = 'min-h-[125dvh]' }: { children: ReactNode; className?: string }) {
+export function Sheet({ children, className = 'min-h-[70dvh]' }: { children: ReactNode; className?: string }) {
   return (
     <article className={`sheet binder ${className} py-8 pr-5 pl-[3.75rem] sm:py-12 sm:pr-12 sm:pl-20`}>
       <span aria-hidden className="punch-hole top-40" />

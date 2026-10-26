@@ -132,13 +132,13 @@ export function PageTurn({ canForward, onTurned, under, children }: Props) {
   }, [canForward, commit, place])
 
   return (
-    <div ref={wrapRef} className="relative touch-pan-y">
+    <div ref={wrapRef} className="relative flex flex-1 touch-pan-y flex-col">
       {turning && (
         <div aria-hidden className="pointer-events-none absolute inset-0">
           {under(turning)}
         </div>
       )}
-      <div ref={pageRef} className="relative will-change-transform">
+      <div ref={pageRef} className="relative flex flex-1 flex-col will-change-transform">
         {children(turn)}
       </div>
     </div>
