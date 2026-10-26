@@ -142,7 +142,7 @@ export function DayPage() {
             so the date keeps the full width of the text column. */}
         <header className="relative mb-8">
           <nav
-            className="no-print absolute top-0 -left-[3.5rem] flex text-ink-soft sm:-left-[4.75rem]"
+            className="no-print absolute top-0 -left-[3.5rem] flex flex-col items-center text-ink-soft sm:-left-[4.75rem]"
             aria-label="Other days"
           >
             <Link to={`/day/${addDays(date, -1)}`} className="px-1.5 hover:text-ribbon" aria-label="Previous day">
