@@ -35,7 +35,7 @@ Decisions from the planning session, worked through question by question, agains
 
 ### Privacy and security
 - **Encrypted on the device from day one.** A key is derived from a passphrase, and text is encrypted with WebCrypto AES-GCM before it leaves the phone.
-  - Encrypted: passage text (raw and cleaned), notes, margin notes, images, link titles.
+  - Encrypted: passage text (raw and cleaned), notes, margin notes, images.
   - Readable: dates and timestamps, needed for sorting.
   - A **printable recovery key** is shown once at setup.
   - The passphrase is entered once per device. The key is stored as a non-extractable `CryptoKey` in IndexedDB. Settings has a "lock journal" button.
@@ -70,9 +70,8 @@ Decisions from the planning session, worked through question by question, agains
 - Cloudflare R2 is the option if Supabase Storage is outgrown. Nothing in the design ties you to Supabase Storage.
 
 ### Links (M2)
-- **Copy and paste.** The notes area offers "Paste link from clipboard?"
-- A small Edge Function fetches the page title (no images), and the title is stored encrypted.
-- No share-sheet integration. iOS doesn't let a PWA appear in the share sheet, and a Shortcut can't encrypt.
+- *Revised:* no separate links feature. Pasting a URL into a note already works. M2 only makes **URLs in notes tappable** when the note isn't being edited (tapping elsewhere in the note still edits it).
+- Fetching page titles and the "Paste link from clipboard?" prompt move to "Later, maybe". Title fetching would need an Edge Function that sees your URLs, for limited gain.
 
 ### AI add-on (M3, optional)
 - Whoever runs a copy pastes in their own API key, which is kept in a Supabase Edge Function and never in the browser. One switch in Settings turns it on.
@@ -106,8 +105,8 @@ Repo layout:
 PWA shell; email + password sign-in with sign-ups off; encryption plus recovery key; today page; passages with time headlines; notes area and All notes view; keyboard dictation flow; filler removal with editable list and raw text kept; 4am rollover; locked past days and margin notes; local save and upload on reconnect; export zip plus restore; typewriter styling; record button can move to the left; keep-alive Action.
 **Done when:** Jonny has used it from bed for a week without missing a night.
 
-### M2: Images and links
-Inline encrypted images; paste links with encrypted titles; on-device search across passages and notes.
+### M2: Images, tappable links, search
+Inline encrypted images; tappable URLs in notes; on-device search across passages and notes.
 
 ### M3: AI add-on
 Your own key, AI transcription for one-tap recording, Tidy, headline suggestions, "Enable AI" guide chapter.
@@ -122,7 +121,7 @@ Starlight self-host guide with exact commands; Supabase setup script; deploy ins
 Native app · storing audio · Android share target · Action button or Shortcut capture · full offline reading · social features and sharing · streaks and gamification · mood tracking · multiple users or teams.
 
 ### Later, maybe
-Passkeys · "on this day" resurfacing · gentle nightly reminder · pinning notes to carry them forward · AI routing of spoken notes · full offline reading.
+Passkeys · link title fetching · "Paste link from clipboard?" prompt · "on this day" resurfacing · gentle nightly reminder · pinning notes to carry them forward · AI routing of spoken notes · full offline reading.
 
 ## To verify before M1
 - [ ] Supabase free-tier pausing policy (third-party sources say 7 days without activity), checked against Supabase's own docs. The keep-alive workflow covers it either way.
