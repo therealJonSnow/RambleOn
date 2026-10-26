@@ -138,15 +138,24 @@ export function DayPage() {
   return (
     <Layout>
       <Sheet>
-        <header className="mb-8">
-          <nav className="no-print flex justify-between text-ink-soft" aria-label="Other days">
-            <Link to={`/day/${addDays(date, -1)}`} className="-ml-2 px-2 hover:text-ribbon" aria-label="Previous day">
+        {/* Back and forward sit together in the margin, level with the date,
+            so the date keeps the full width of the text column. */}
+        <header className="relative mb-8">
+          <nav
+            className="no-print absolute top-0 -left-[3.5rem] flex text-ink-soft sm:-left-[4.75rem]"
+            aria-label="Other days"
+          >
+            <Link to={`/day/${addDays(date, -1)}`} className="px-1.5 hover:text-ribbon" aria-label="Previous day">
               &lt;
             </Link>
-            {date < today && (
-              <Link to={addDays(date, 1) === today ? '/' : `/day/${addDays(date, 1)}`} className="-mr-2 px-2 hover:text-ribbon" aria-label="Next day">
+            {date < today ? (
+              <Link to={addDays(date, 1) === today ? '/' : `/day/${addDays(date, 1)}`} className="px-1.5 hover:text-ribbon" aria-label="Next day">
                 &gt;
               </Link>
+            ) : (
+              <span className="px-1.5 opacity-25" aria-hidden>
+                &gt;
+              </span>
             )}
           </nav>
           <h1 className="text-center">

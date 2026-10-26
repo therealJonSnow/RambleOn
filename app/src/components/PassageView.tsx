@@ -201,11 +201,14 @@ export function PassageView({ passage, editable, today, onSave, onMove, onDelete
               <Photo image={b} onOpen={() => setViewing(b)} />
               {editable && (
                 <button
-                  className="no-print absolute -top-3 -right-3 z-10 grid size-8 place-items-center rounded-full bg-paper text-pencil shadow hover:text-ribbon"
+                  className="no-print absolute -top-3 -right-3 z-10 grid size-8 place-items-center rounded-full bg-ribbon text-ribbon-ink shadow-md active:scale-95"
                   aria-label="Remove photo"
                   onClick={() => removePhoto(b)}
                 >
-                  ×
+                  {/* Drawn, not typed, so it sits exactly centred. */}
+                  <svg viewBox="0 0 12 12" className="size-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                    <path d="M2 2l8 8M10 2l-8 8" />
+                  </svg>
                 </button>
               )}
             </div>
