@@ -49,3 +49,8 @@ export function formatLongDate(date: string): string {
 export function formatShortDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
+
+// "2026-10" → "October 2026"
+export function formatMonth(month: string): string {
+  return parseIsoDate(`${month}-01`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+}

@@ -9,11 +9,11 @@ import { useSustained } from '../lib/useSustained'
 const navClass = ({ isActive }: { isActive: boolean }) =>
   `uppercase tracking-[0.06em] ${isActive ? 'text-ribbon underline underline-offset-[6px] decoration-1' : 'hover:text-ribbon'}`
 
-export function Layout({ children }: { children: ReactNode }) {
+export function Layout({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   const { status } = useJournal()
   const serverDown = useSustained(status.unavailable && navigator.onLine, 15_000)
   return (
-    <div className="mx-auto max-w-2xl px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-32 sm:px-6">
+    <div className={`mx-auto max-w-2xl ${wide ? 'lg:max-w-5xl' : ''} px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-32 sm:px-6`}>
       <nav className="no-print mb-3 flex items-center justify-between gap-4 px-1">
         <NavLink to="/" end className={navClass}>
           Today
@@ -49,9 +49,9 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 // A punched sheet of typing paper. Content sits right of the margin rule.
-export function Sheet({ children }: { children: ReactNode }) {
+export function Sheet({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <article className="sheet binder min-h-[70dvh] py-8 pr-5 pl-[3.75rem] sm:py-12 sm:pr-12 sm:pl-20">
+    <article className={`sheet binder min-h-[70dvh] ${className} py-8 pr-5 pl-[3.75rem] sm:py-12 sm:pr-12 sm:pl-20`}>
       <span aria-hidden className="punch-hole top-40" />
       <span aria-hidden className="punch-hole top-1/2" />
       <span aria-hidden className="punch-hole bottom-24" />

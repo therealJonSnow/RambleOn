@@ -112,7 +112,10 @@ Inline encrypted images; tappable URLs in notes; on-device search across passage
 Your own key, AI transcription for one-tap recording, Tidy, headline suggestions, "Enable AI" guide chapter.
 
 ### M4: Journal feel
-Page-turn animations, typed-page layout, two-page spreads, maybe typewriter sounds. A print view styled with print CSS (per day or month) for printing to paper or PDF, so pages can go in the binder.
+*Revised:* page turns, a notes column on wide screens, and a print view. No two-page spreads and no typewriter sounds.
+- **Page turns:** swipe sideways anywhere on a day page. The page follows your finger and lifts off in the direction you swipe, like a loose sheet slid off a pile, showing the next sheet beneath. Swipe left for the next day, right for the day before. Today is the top of the pile: it gives a little and springs back. The arrows play the same turn. No turns while you're typing, and none with reduced motion switched on.
+- **Notes column:** on wide screens (1024px and up) the day's notes sit in their own column beside the page. The page stays the main column.
+- **Print view:** "Print this day" under each page, and "Print month" beside each month in Days. One printed page per day, black on white whatever the screen theme, with a wide left margin for a hole punch. "Save as PDF" in the print dialog keeps a copy.
 
 ### M5: Open-source release
 Starlight self-host guide with exact commands; Supabase setup script; deploy instructions for Netlify, Vercel and Cloudflare.

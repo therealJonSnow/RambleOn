@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { DeskHeading, Layout, Slip } from '../components/Layout'
-import { formatLongDate, formatWeekday } from '../lib/dates'
+import { formatLongDate, formatMonth, formatWeekday } from '../lib/dates'
 import type { Note, Passage } from '../lib/models'
 import { search } from '../lib/search'
 import type { DaySummary } from '../lib/store/types'
@@ -41,6 +41,12 @@ export function DaysPage() {
   }, [journal, syncRevision, searching])
 
   const hits = useMemo(() => (all && searching ? search(query, all.passages, all.notes) : []), [all, query, searching])
+  // Newest first, under a heading per month.
+  const months = useMemo(() => {
+    const groups = new Map<string, DaySummary[]>()
+    for (const d of days ?? []) groups.set(d.date.slice(0, 7), [...(groups.get(d.date.slice(0, 7)) ?? []), d])
+    return [...groups]
+  }, [days])
   const dayLink = (date: string) => (date === today ? '/' : `/day/${date}`)
 
   return (
@@ -84,20 +90,30 @@ export function DaysPage() {
           {error && <p className="px-1 text-ribbon">Couldn’t load your days. Check your connection and try again.</p>}
           {!days && !error && <p className="animate-pulse px-1 text-ink-soft">Loading…</p>}
           {days?.length === 0 && <p className="px-1 text-ink-soft">Nothing written yet.</p>}
-          <ol>
-            {days?.map((d) => (
-              <Slip key={d.date}>
-                <Link to={dayLink(d.date)} className="block hover:text-ribbon">
-                  <span className="block uppercase tracking-[0.05em]">
-                    {formatWeekday(d.date)} {formatLongDate(d.date)}
-                  </span>
-                  <span className="block text-pencil">
-                    {[d.passages && plural(d.passages, 'passage'), d.notes && plural(d.notes, 'note')].filter(Boolean).join(' · ')}
-                  </span>
+          {months.map(([month, list]) => (
+            <section key={month} aria-label={formatMonth(month)} className="mb-6">
+              <div className="mb-3 flex items-baseline justify-between gap-4 px-1">
+                <h2 className="label">{formatMonth(month)}</h2>
+                <Link to={`/print/${month}`} className="link text-pencil">
+                  Print month
                 </Link>
-              </Slip>
-            ))}
-          </ol>
+              </div>
+              <ol>
+                {list.map((d) => (
+                  <Slip key={d.date}>
+                    <Link to={dayLink(d.date)} className="block hover:text-ribbon">
+                      <span className="block uppercase tracking-[0.05em]">
+                        {formatWeekday(d.date)} {formatLongDate(d.date)}
+                      </span>
+                      <span className="block text-pencil">
+                        {[d.passages && plural(d.passages, 'passage'), d.notes && plural(d.notes, 'note')].filter(Boolean).join(' · ')}
+                      </span>
+                    </Link>
+                  </Slip>
+                ))}
+              </ol>
+            </section>
+          ))}
         </>
       )}
     </Layout>

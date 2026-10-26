@@ -1,8 +1,9 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { AutoTextarea } from '../components/AutoTextarea'
 import { Layout, Sheet } from '../components/Layout'
 import { NotesArea } from '../components/NotesArea'
+import { PageTurn, type Turn } from '../components/PageTurn'
 import { PassageView } from '../components/PassageView'
 import {
   addDays,
@@ -16,6 +17,7 @@ import { removeFillers } from '../lib/filler'
 import type { DayContent, Draft } from '../lib/journal'
 import type { Note, Passage } from '../lib/models'
 import { useDebounced } from '../lib/useDebounced'
+import { useMediaQuery } from '../lib/useMediaQuery'
 import { useJournal } from '../state/journal'
 
 const arrow = 'grid size-11 place-items-center hover:text-ribbon active:text-ribbon'
@@ -26,8 +28,19 @@ const Chevron = ({ d }: { d: string }) => (
   </svg>
 )
 
+const DateHeading = ({ date }: { date: string }) => (
+  <h1 className="text-center">
+    <span className="typed-heading">
+      {formatWeekday(date)} {formatLongDate(date)}
+    </span>
+  </h1>
+)
+
 export function DayPage() {
   const params = useParams()
+  const navigate = useNavigate()
+  // Wide screens put notes in their own column beside the page.
+  const wide = useMediaQuery('(min-width: 1024px)')
   const { journal, settings, today, syncRevision, updateSettings } = useJournal()
   const date = params.date ?? today
   const editable = isDayEditable(date, today, settings.unlockedDates)
@@ -140,128 +153,174 @@ export function DayPage() {
   const relock = () =>
     updateSettings({ ...settings, unlockedDates: settings.unlockedDates.filter((d) => d !== date) })
 
+  const dayPath = (d: string) => (d === today ? '/' : `/day/${d}`)
+  const target = (t: Turn) => addDays(date, t === 'forward' ? 1 : -1)
+  const canForward = date < today
+
   const composing = draft !== null
   const empty = day && day.passages.length === 0 && !editable
 
   return (
-    <Layout>
-      <Sheet>
-        {/* Back and forward sit together in the margin, level with the date,
-            so the date keeps the full width of the text column. */}
-        <header className="relative mb-8">
-          <nav
-            className="no-print absolute -top-[7px] -left-[3.75rem] flex w-11 flex-col text-ink-soft sm:-left-20"
-            aria-label="Other days"
-          >
-            {/* Full-margin-width, 44px tap targets; the first is centred on the date's first line. */}
-            <Link to={`/day/${addDays(date, -1)}`} className={arrow} aria-label="Previous day">
-              <Chevron d="M10 3L5 8l5 5" />
-            </Link>
-            {date < today ? (
-              <Link to={addDays(date, 1) === today ? '/' : `/day/${addDays(date, 1)}`} className={arrow} aria-label="Next day">
-                <Chevron d="M6 3l5 5-5 5" />
-              </Link>
-            ) : (
-              <span className={`${arrow} opacity-25`} aria-hidden>
-                <Chevron d="M6 3l5 5-5 5" />
-              </span>
-            )}
-          </nav>
-          <h1 className="text-center">
-            <span className="typed-heading">
-              {formatWeekday(date)} {formatLongDate(date)}
-            </span>
-          </h1>
-        </header>
-
-        {!editable && (
-          <p className="no-print mb-8 text-center text-pencil">This page is locked. Add a margin note to correct anything.</p>
-        )}
-        {editable && date < today && (
-          <p className="no-print mb-8 text-center text-pencil">
-            Unlocked for editing ·{' '}
-            <button className="link" onClick={relock}>
-              Lock again
-            </button>
-          </p>
-        )}
-        {day && !day.complete && (
-          <p className="no-print mb-8 text-center text-ribbon">Couldn’t load everything. Showing what’s saved on this device.</p>
-        )}
-
-        {!day ? (
-          <p className="animate-pulse text-ink-soft">Loading…</p>
-        ) : (
-          <>
-            {day.passages.map((p, i) => (
-              <Fragment key={p.id}>
-                {i > 0 && <PassageBreak />}
-                <PassageView passage={p} editable={editable} today={today} onSave={savePassage} onMove={movePassage} onDelete={deletePassage} />
-              </Fragment>
-            ))}
-            {empty && (
-              <p className="mb-10 text-pencil">
-                Nothing was written on this day.
-              </p>
-            )}
-          </>
-        )}
-
-        {/* The next line of the page: tap it to start writing. */}
-        {editable && day && (
-          <section className="mb-4" aria-label="New passage">
-            {draft && day.passages.length > 0 && <PassageBreak />}
-            {draft && (
-              <header className="flex items-baseline gap-3 text-pencil">
-                <time>{formatTime(draft.writtenAt)}</time>
-                <span>Dictate with the keyboard mic</span>
-              </header>
-            )}
-            <div className="flex gap-3">
-              {!draft && (
-                <span aria-hidden className="pt-0.5 text-pencil">
-                  +
-                </span>
+    <Layout wide>
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start lg:gap-8">
+        <PageTurn
+          canForward={canForward}
+          onTurned={(t) => navigate(dayPath(target(t)))}
+          under={(t) => (
+            <Sheet className="h-full">
+              {(t === 'back' || canForward) && (
+                <header className="mb-8">
+                  <DateHeading date={target(t)} />
+                </header>
               )}
-              <AutoTextarea
-                ref={composerRef}
-                aria-label="New passage"
-                placeholder={draft ? 'Start talking…' : 'Start a new passage…'}
-                value={draft?.raw ?? ''}
-                onFocus={startPassage}
-                onBlur={abandonIfEmpty}
-                onChange={(e) => {
-                  const d = { ...(draft ?? { id: crypto.randomUUID(), writtenAt: new Date().toISOString(), journalDate: date }), raw: e.target.value }
-                  setDraft(d)
-                  persistDraft(d)
-                }}
-              />
-            </div>
-            {composing && draft.raw.trim() && (
-              <div className="no-print mt-3 flex justify-end gap-3">
-                <button className="btn" onClick={discardPassage}>
-                  Discard
-                </button>
-                <button className="btn-primary" onClick={finishPassage}>
-                  Done
-                </button>
-              </div>
-            )}
-          </section>
+            </Sheet>
+          )}
+        >
+          {(turn) => (
+            <Sheet>
+              {/* Back and forward sit together in the margin, level with the date,
+                  so the date keeps the full width of the text column. */}
+              <header className="relative mb-8">
+                <nav
+                  className="no-print absolute -top-[7px] -left-[3.75rem] flex w-11 flex-col text-ink-soft sm:-left-20"
+                  aria-label="Other days"
+                >
+                  {/* Full-margin-width, 44px tap targets; the first is centred on the date's first line. */}
+                  <Link
+                    to={dayPath(target('back'))}
+                    className={arrow}
+                    aria-label="Previous day"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      turn('back')
+                    }}
+                  >
+                    <Chevron d="M10 3L5 8l5 5" />
+                  </Link>
+                  {canForward ? (
+                    <Link
+                      to={dayPath(target('forward'))}
+                      className={arrow}
+                      aria-label="Next day"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        turn('forward')
+                      }}
+                    >
+                      <Chevron d="M6 3l5 5-5 5" />
+                    </Link>
+                  ) : (
+                    <span className={`${arrow} opacity-25`} aria-hidden>
+                      <Chevron d="M6 3l5 5-5 5" />
+                    </span>
+                  )}
+                </nav>
+                <DateHeading date={date} />
+              </header>
+
+              {!editable && (
+                <p className="no-print mb-8 text-center text-pencil">This page is locked. Add a margin note to correct anything.</p>
+              )}
+              {editable && date < today && (
+                <p className="no-print mb-8 text-center text-pencil">
+                  Unlocked for editing ·{' '}
+                  <button className="link" onClick={relock}>
+                    Lock again
+                  </button>
+                </p>
+              )}
+              {day && !day.complete && (
+                <p className="no-print mb-8 text-center text-ribbon">Couldn’t load everything. Showing what’s saved on this device.</p>
+              )}
+
+              {!day ? (
+                <p className="animate-pulse text-ink-soft">Loading…</p>
+              ) : (
+                <>
+                  {day.passages.map((p, i) => (
+                    <Fragment key={p.id}>
+                      {i > 0 && <PassageBreak />}
+                      <PassageView passage={p} editable={editable} today={today} onSave={savePassage} onMove={movePassage} onDelete={deletePassage} />
+                    </Fragment>
+                  ))}
+                  {empty && (
+                    <p className="mb-10 text-pencil">
+                      Nothing was written on this day.
+                    </p>
+                  )}
+                </>
+              )}
+
+              {/* The next line of the page: tap it to start writing. */}
+              {editable && day && (
+                <section className="mb-4" aria-label="New passage">
+                  {draft && day.passages.length > 0 && <PassageBreak />}
+                  {draft && (
+                    <header className="flex items-baseline gap-3 text-pencil">
+                      <time>{formatTime(draft.writtenAt)}</time>
+                      <span>Dictate with the keyboard mic</span>
+                    </header>
+                  )}
+                  <div className="flex gap-3">
+                    {!draft && (
+                      <span aria-hidden className="pt-0.5 text-pencil">
+                        +
+                      </span>
+                    )}
+                    <AutoTextarea
+                      ref={composerRef}
+                      aria-label="New passage"
+                      placeholder={draft ? 'Start talking…' : 'Start a new passage…'}
+                      value={draft?.raw ?? ''}
+                      onFocus={startPassage}
+                      onBlur={abandonIfEmpty}
+                      onChange={(e) => {
+                        const d = { ...(draft ?? { id: crypto.randomUUID(), writtenAt: new Date().toISOString(), journalDate: date }), raw: e.target.value }
+                        setDraft(d)
+                        persistDraft(d)
+                      }}
+                    />
+                  </div>
+                  {composing && draft.raw.trim() && (
+                    <div className="no-print mt-3 flex justify-end gap-3">
+                      <button className="btn" onClick={discardPassage}>
+                        Discard
+                      </button>
+                      <button className="btn-primary" onClick={finishPassage}>
+                        Done
+                      </button>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {day && (day.margins.length > 0 || !editable) && (
+                <MarginNotes margins={day.margins} canAdd={!editable} onAdd={addMargin} onDelete={deletePassage} />
+              )}
+
+
+              {day && !wide && <NotesArea date={date} notes={day.notes} onSave={saveNote} onDelete={deleteNote} onAdded={addNote} />}
+            </Sheet>
+          )}
+        </PageTurn>
+
+        {day && wide && (
+          <aside className="sheet px-6 py-8 lg:sticky lg:top-4">
+            <NotesArea date={date} notes={day.notes} onSave={saveNote} onDelete={deleteNote} onAdded={addNote} separate />
+          </aside>
         )}
+      </div>
 
-        {day && (day.margins.length > 0 || !editable) && (
-          <MarginNotes margins={day.margins} canAdd={!editable} onAdd={addMargin} onDelete={deletePassage} />
-        )}
-
-        {day && <NotesArea date={date} notes={day.notes} onSave={saveNote} onDelete={deleteNote} onAdded={addNote} />}
-      </Sheet>
-
+      <p className="no-print mt-6 px-1 text-right">
+        <Link to={`/print/${date}`} className="link text-pencil">
+          Print this day
+        </Link>
+      </p>
     </Layout>
   )
 }
 
-function MarginNotes({
+export function MarginNotes({
   margins,
   canAdd,
   onAdd,
@@ -312,7 +371,7 @@ function MarginNotes({
 }
 
 // Between passages, as in a typed manuscript. Times are kept, not printed.
-function PassageBreak() {
+export function PassageBreak() {
   return (
     <p aria-hidden className="mb-6 text-center tracking-[0.6em] text-pencil">
       * * *

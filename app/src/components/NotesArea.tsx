@@ -11,6 +11,8 @@ interface Props {
   onDelete(n: Note): void
   // A new note is finished (the box lost focus). Must replace any copy with the same id.
   onAdded(n: Note): void
+  // In its own column rather than at the foot of the page.
+  separate?: boolean
 }
 
 const blankNote = (date: string): Note => ({
@@ -21,7 +23,7 @@ const blankNote = (date: string): Note => ({
 })
 
 // The day's notes: text-first, always editable, like a small notes app.
-export function NotesArea({ date, notes, onSave, onDelete, onAdded }: Props) {
+export function NotesArea({ date, notes, onSave, onDelete, onAdded, separate = false }: Props) {
   // The note being typed in the "Add a note…" box. It is saved as you type,
   // so a page refresh can bring it back from the server: keep it out of the
   // list until it's finished, or it shows up twice.
@@ -34,10 +36,12 @@ export function NotesArea({ date, notes, onSave, onDelete, onAdded }: Props) {
   const listed = notes.filter((n) => n.id !== draft.id)
 
   return (
-    <section className="mt-6" aria-label="Notes">
-      <p aria-hidden className="typed-rule mb-4">
-        {'- '.repeat(60)}
-      </p>
+    <section className={separate ? '' : 'mt-6'} aria-label="Notes">
+      {!separate && (
+        <p aria-hidden className="typed-rule mb-4">
+          {'- '.repeat(60)}
+        </p>
+      )}
       <h2 className="typed-heading mb-4 inline-block">Notes</h2>
       <ul>
         {listed.map((n) => (

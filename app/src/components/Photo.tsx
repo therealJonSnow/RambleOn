@@ -21,8 +21,9 @@ function usePhotoUrl(id: string, variant: 'thumb' | 'full') {
 }
 
 // A photo taped onto the page.
-export function Photo({ image, onOpen }: { image: ImageBlock; onOpen(): void }) {
-  const url = usePhotoUrl(image.id, 'thumb')
+// Print uses the full-size photo; the page uses the small one.
+export function Photo({ image, onOpen, full = false }: { image: ImageBlock; onOpen(): void; full?: boolean }) {
+  const url = usePhotoUrl(image.id, full ? 'full' : 'thumb')
   return (
     <button
       type="button"
@@ -56,6 +57,7 @@ export function PhotoViewer({ image, onClose }: { image: ImageBlock; onClose(): 
       role="dialog"
       aria-modal="true"
       aria-label="Photo"
+      data-no-turn
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
       onClick={onClose}
     >

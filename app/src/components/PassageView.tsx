@@ -24,9 +24,11 @@ interface Props {
   onSave(p: Passage): void
   onMove(p: Passage, date: string): void
   onDelete(p: Passage): void
+  // Printing: full-size photos.
+  print?: boolean
 }
 
-export function PassageView({ passage, editable, today, onSave, onMove, onDelete }: Props) {
+export function PassageView({ passage, editable, today, onSave, onMove, onDelete, print = false }: Props) {
   const { journal } = useJournal()
   // Local copies: the page may reload underneath while you type.
   const [title, setTitle] = useState(passage.title)
@@ -198,7 +200,7 @@ export function PassageView({ passage, editable, today, onSave, onMove, onDelete
         ) : (
           <figure key={b.id} className="mt-6 mb-2 sm:mx-6">
             <div className="relative">
-              <Photo image={b} onOpen={() => setViewing(b)} />
+              <Photo image={b} full={print} onOpen={() => setViewing(b)} />
               {editable && (
                 <button
                   className="no-print absolute -top-3 -right-3 z-10 grid size-8 place-items-center rounded-full bg-ribbon text-ribbon-ink shadow-md active:scale-95"

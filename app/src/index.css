@@ -52,6 +52,8 @@
     font-size: 17px;
     line-height: 30px;
     min-height: 100dvh;
+    /* A page being turned slides off the screen without widening it. */
+    overflow-x: clip;
   }
   /* Inherit the one size (17px also stops iOS zooming into inputs). */
   input,
@@ -176,11 +178,58 @@
   @apply btn border-ribbon bg-ribbon text-ribbon-ink;
 }
 
+/* Printed pages: plain paper, black ink, whatever the screen theme. A wide
+   left margin leaves room to punch holes for a real binder. */
+@page {
+  margin: 18mm 16mm 18mm 26mm;
+}
 @media print {
+  :root {
+    --color-paper: white;
+    --color-ink: #000;
+    --color-ink-soft: #444;
+    --color-pencil: #555;
+    --color-ribbon: #a8231b;
+    --color-print: white;
+    --color-paper-edge: #e6dcc6;
+  }
   body {
     background: white;
+    font-size: 11pt;
+    line-height: 1.75;
   }
   .no-print {
     display: none !important;
+  }
+  .sheet {
+    background: none;
+    box-shadow: none;
+    rotate: none;
+  }
+  .binder::before,
+  .punch-hole {
+    display: none;
+  }
+  .print-page {
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    break-after: page;
+  }
+  .print-page:last-child {
+    break-after: auto;
+  }
+  /* Small enough that a portrait photo fits on one page. */
+  figure {
+    break-inside: avoid;
+    max-width: 65%;
+    margin-inline: auto;
+  }
+  .taped-photo {
+    rotate: none;
+    box-shadow: none;
+  }
+  .taped-photo::before {
+    display: none;
   }
 }
