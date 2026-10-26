@@ -18,6 +18,14 @@ import type { Note, Passage } from '../lib/models'
 import { useDebounced } from '../lib/useDebounced'
 import { useJournal } from '../state/journal'
 
+const arrow = 'grid size-11 place-items-center hover:text-ribbon active:text-ribbon'
+
+const Chevron = ({ d }: { d: string }) => (
+  <svg viewBox="0 0 16 16" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d={d} />
+  </svg>
+)
+
 export function DayPage() {
   const params = useParams()
   const { journal, settings, today, syncRevision, updateSettings } = useJournal()
@@ -142,19 +150,20 @@ export function DayPage() {
             so the date keeps the full width of the text column. */}
         <header className="relative mb-8">
           <nav
-            className="no-print absolute top-0 -left-[3.5rem] flex flex-col items-center text-ink-soft sm:-left-[4.75rem]"
+            className="no-print absolute -top-[7px] -left-[3.75rem] flex w-11 flex-col text-ink-soft sm:-left-20"
             aria-label="Other days"
           >
-            <Link to={`/day/${addDays(date, -1)}`} className="px-1.5 hover:text-ribbon" aria-label="Previous day">
-              &lt;
+            {/* Full-margin-width, 44px tap targets; the first is centred on the date's first line. */}
+            <Link to={`/day/${addDays(date, -1)}`} className={arrow} aria-label="Previous day">
+              <Chevron d="M10 3L5 8l5 5" />
             </Link>
             {date < today ? (
-              <Link to={addDays(date, 1) === today ? '/' : `/day/${addDays(date, 1)}`} className="px-1.5 hover:text-ribbon" aria-label="Next day">
-                &gt;
+              <Link to={addDays(date, 1) === today ? '/' : `/day/${addDays(date, 1)}`} className={arrow} aria-label="Next day">
+                <Chevron d="M6 3l5 5-5 5" />
               </Link>
             ) : (
-              <span className="px-1.5 opacity-25" aria-hidden>
-                &gt;
+              <span className={`${arrow} opacity-25`} aria-hidden>
+                <Chevron d="M6 3l5 5-5 5" />
               </span>
             )}
           </nav>

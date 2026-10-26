@@ -52,7 +52,7 @@ export function Layout({ children }: { children: ReactNode }) {
 export function Sheet({ children }: { children: ReactNode }) {
   return (
     <article className="sheet binder min-h-[70dvh] py-8 pr-5 pl-[3.75rem] sm:py-12 sm:pr-12 sm:pl-20">
-      <span aria-hidden className="punch-hole top-24" />
+      <span aria-hidden className="punch-hole top-40" />
       <span aria-hidden className="punch-hole top-1/2" />
       <span aria-hidden className="punch-hole bottom-24" />
       {children}
