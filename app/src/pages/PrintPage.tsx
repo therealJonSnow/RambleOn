@@ -53,7 +53,7 @@ export function PrintPage() {
       {!days && <p className="animate-pulse px-1 text-ink-soft">Loading…</p>}
       {days?.length === 0 && <p className="px-1 text-ink-soft">Nothing written in {title}.</p>}
       {days?.map(({ date, day }) => (
-        <Sheet key={date} className="print-page mb-8">
+        <Sheet key={date} className="print-page mb-8 min-h-[70dvh]">
           <header className="mb-8">
             <h1 className="text-center">
               <span className="typed-heading">

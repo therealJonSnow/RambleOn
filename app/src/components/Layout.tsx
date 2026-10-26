@@ -49,9 +49,10 @@ export function Layout({ children, wide = false }: { children: ReactNode; wide?:
 }
 
 // A punched sheet of typing paper. Content sits right of the margin rule.
-export function Sheet({ children, className = '' }: { children: ReactNode; className?: string }) {
+// Taller than the screen, so there's always room to keep writing.
+export function Sheet({ children, className = 'min-h-[125dvh]' }: { children: ReactNode; className?: string }) {
   return (
-    <article className={`sheet binder min-h-[70dvh] ${className} py-8 pr-5 pl-[3.75rem] sm:py-12 sm:pr-12 sm:pl-20`}>
+    <article className={`sheet binder ${className} py-8 pr-5 pl-[3.75rem] sm:py-12 sm:pr-12 sm:pl-20`}>
       <span aria-hidden className="punch-hole top-40" />
       <span aria-hidden className="punch-hole top-1/2" />
       <span aria-hidden className="punch-hole bottom-24" />

@@ -178,7 +178,9 @@ export function DayPage() {
           )}
         >
           {(turn) => (
-            <Sheet>
+            <Sheet className="flex min-h-[125dvh] flex-col">
+              {/* The writing, then blank paper, with notes at the foot of the sheet. */}
+              <div>
               {/* Back and forward sit together in the margin, level with the date,
                   so the date keeps the full width of the text column. */}
               <header className="relative mb-8">
@@ -300,7 +302,12 @@ export function DayPage() {
               )}
 
 
-              {day && !wide && <NotesArea date={date} notes={day.notes} onSave={saveNote} onDelete={deleteNote} onAdded={addNote} />}
+              </div>
+              {day && !wide && (
+                <div className="mt-auto">
+                  <NotesArea date={date} notes={day.notes} onSave={saveNote} onDelete={deleteNote} onAdded={addNote} />
+                </div>
+              )}
             </Sheet>
           )}
         </PageTurn>
